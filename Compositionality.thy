@@ -4,10 +4,7 @@ theory Compositionality
   imports Logic Expressivity Loops
 begin
 
-text \<open>In this file, we prove the soundness of all compositionality rules presented in section 4 (figure 7)
-and in appendix B (figure 11).\<close>
-
-subsection \<open>Syntax for hyper-assertions\<close>
+text \<open>In this file, we prove the soundness of all compositionality rules presented in Appendix D (figure 11).\<close>
 
 definition in_set where
   "in_set \<phi> S \<longleftrightarrow> \<phi> \<in> S"
@@ -274,9 +271,6 @@ lemma entails_with_updatesE:
 proposition rule_LUpdate:
   assumes "\<Turnstile> {P'} C {Q}"
       and "entails_with_updates vars P P'"
-(*
-      and "entails Q' Q"
-*)
       and "invariant_on_updates vars Q"
     shows "\<Turnstile> {P} C {Q}"
 proof (rule hyper_hoare_tripleI)
@@ -716,7 +710,7 @@ qed
 
 
 
-subsection \<open>Synchronous Reasoning (Proposition 19, Appendix E).\<close>
+subsection \<open>Synchronous Reasoning (Proposition 14, Appendix H).\<close>
 
 theorem if_sync_rule:
   assumes "\<Turnstile> {P} C1 {P1}"
@@ -810,10 +804,10 @@ lemma same_mod_updates_empty:
   assumes "same_mod_updates vars {} S'"
   shows "S' = {}"
   by (meson assms equals0D equals0I same_mod_updates_def subset_mod_updatesE)
+
 definition not_fv_hyper where
   "not_fv_hyper t A \<longleftrightarrow> (\<forall>S S'. same_mod_updates {t} S S' \<and> A S \<longrightarrow> A S')"
 
-(* Wrong, but definition should cover this *)
 lemma not_fv_hyperE:
   assumes "not_fv_hyper e I"
       and "same_mod_updates {e} S S'"

@@ -2,10 +2,6 @@ theory Loops
   imports Logic HOL.Wellfounded Expressivity
 begin      
 
-text \<open>Plan:
-1. Synchronized rules for if and loops
-2. Rules for loop based on (if b then C) approx\<close>
-
 definition lnot where
   "lnot b \<sigma> = (\<not>b \<sigma>)"
 
@@ -324,10 +320,6 @@ proof (rule hyper_hoare_tripleI)
 qed
 
 
-
-section \<open>Second part: While rule with if then...\<close>
-
-
 definition if_then where
   "if_then b C = If (Assume b;; C) (Assume (lnot b))"
 
@@ -456,7 +448,6 @@ next
     by (simp add: Suc filter_exp_union sem_union sup_assoc)
   also have "... = sem C (filter_exp b ?SN) \<union> filter_exp (lnot b) ?SU \<union> filter_exp (lnot b) ?SN"
     by (metis Un_empty_left filter_exp_contradict filter_exp_same sem_union)
-
   moreover have "iterate_sem (Suc m) (Assume b ;; C) S = sem C (filter_exp b ?SN)"
     by (simp add: assume_sem filter_exp_def sem_seq)
   moreover have "union_up_to_n (Assume b ;; C) S (Suc m) = sem C (filter_exp b ?SN) \<union> ?SU"
@@ -476,10 +467,6 @@ next
   then show ?case
     using \<open>filter_exp (lnot b) (sem C (filter_exp b (iterate_sem m (Assume b ;; C) S)) \<union> union_up_to_n (Assume b ;; C) S m) \<union> sem C (filter_exp b (iterate_sem m (Assume b ;; C) S)) = filter_exp (lnot b) (union_up_to_n (Assume b ;; C) S m) \<union> sem C (filter_exp b (iterate_sem m (Assume b ;; C) S))\<close> \<open>iterate_sem (Suc m) (Assume b ;; C) S = sem C (filter_exp b (iterate_sem m (Assume b ;; C) S))\<close> \<open>iterate_sem (Suc m) (if_then b C) S = sem C (filter_exp b (iterate_sem m (if_then b C) S)) \<union> filter_exp (lnot b) (iterate_sem m (if_then b C) S)\<close> \<open>sem C (filter_exp b (filter_exp (lnot b) (union_up_to_n (Assume b ;; C) S m))) \<union> sem C (filter_exp b (iterate_sem m (Assume b ;; C) S)) \<union> filter_exp (lnot b) (filter_exp (lnot b) (union_up_to_n (Assume b ;; C) S m)) \<union> filter_exp (lnot b) (iterate_sem m (Assume b ;; C) S) = sem C (filter_exp b (iterate_sem m (Assume b ;; C) S)) \<union> filter_exp (lnot b) (union_up_to_n (Assume b ;; C) S m) \<union> filter_exp (lnot b) (iterate_sem m (Assume b ;; C) S)\<close> \<open>sem C (filter_exp b (iterate_sem m (if_then b C) S)) \<union> filter_exp (lnot b) (iterate_sem m (if_then b C) S) = sem C (filter_exp b (filter_exp (lnot b) (union_up_to_n (Assume b ;; C) S m))) \<union> sem C (filter_exp b (iterate_sem m (Assume b ;; C) S)) \<union> filter_exp (lnot b) (filter_exp (lnot b) (union_up_to_n (Assume b ;; C) S m)) \<union> filter_exp (lnot b) (iterate_sem m (Assume b ;; C) S)\<close> by auto
 qed
-
-
-
-
 
 
 lemma sem_while_with_if:
@@ -549,7 +536,6 @@ lemma upwards_closedI:
 lemma ascending_iterate_filter:
   "ascending (\<lambda>n. filter_exp (lnot b) (union_up_to_n (if_then b C) S n))"
   by (metis ascendingI iterate_sem_assume_increasing iterate_sem_assume_increasing_union_up_to)
-
 
 
 theorem while_general:
@@ -691,7 +677,7 @@ qed
 definition downwards_closed where
   "downwards_closed P_inf \<longleftrightarrow> (\<forall>S S'. S \<subseteq> S' \<and> P_inf S' \<longrightarrow> P_inf S)"
 
-(* Slight change from paper *)
+(* Slight change compared to Ellora paper *)
 definition d_closed where
   "d_closed P P_inf \<longleftrightarrow> t_closed P P_inf \<and> downwards_closed P_inf"
 
@@ -741,7 +727,7 @@ qed
 
 theorem while_d:
   assumes "\<And>n. \<Turnstile> {P n} if_then b C {P (Suc n)}"
-      and "upwards_closed P P_inf" \<comment>\<open>How to prove this syntactically? Have n as "0"?\<close>
+      and "upwards_closed P P_inf"
       and "\<And>n. downwards_closed (P n)" \<comment>\<open>Satisfied by hyper-assertions that do not existentially quantify over states\<close>
     shows "\<Turnstile> {P 0} while_cond b C {conj P_inf (holds_forall (lnot b))}"
   using assms(1)
@@ -838,22 +824,7 @@ proof (rule hyper_hoare_tripleI)
     by (simp add: \<open>sem (while_cond b C) S = filter_exp (lnot b) (\<Union>n. iterate_sem n (Assume b ;; C) S)\<close> sup.absorb1)
 qed
 
-(*
 
-TODO:
-- Example of something not upwards-closed: A minimum
-\<longrightarrow> Illustration of the minimum with the synchronized rule
-
-- Rule based on termination with a variant (well-founded): Stronger!
-No need to give the value...
-
-- Explore/Add union-closed stuff (binary and infinite)
-for ifs and loops
-
-- Completeness with the upwards-closed rule? (like in Ellora)
-
-- Explore with the syntax with assertions are what...
-*)
 lemma false_state_in_if_then:
   assumes "\<phi> \<in> S"
       and "\<not> b (snd \<phi>)"

@@ -1,9 +1,9 @@
 section \<open>Hyper Hoare Logic\<close>
 
 text \<open>This file contains technical results from sections 3 and 5:
-- Hyper-assertions (definition 4)
-- Hyper-triples (definition 6)
-- Core rules of Hyper Hoare Logic (figure 4)
+- Hyper-assertions (definition 3)
+- Hyper-triples (definition 5)
+- Core rules of Hyper Hoare Logic (figure 3)
 - Soundness of the core rules (theorem 1)
 - Completeness of the core rules (theorem 2)
 - Ability to disprove hyper-triples (theorem 4)\<close>
@@ -12,7 +12,7 @@ theory Logic
   imports Language
 begin
 
-text \<open>Definition 4\<close>
+text \<open>Definition 3\<close>
 type_synonym 'a hyperassertion = "('a set \<Rightarrow> bool)"
 
 definition entails where
@@ -131,7 +131,7 @@ lemma under_inter:
   "entails (conj (under_approx P) (under_approx Q)) (under_approx (P \<inter> Q))"
   by (simp add: conj_def entails_def le_infI1 under_approx_def)
 
-text \<open>Operator \<otimes> in figure 3\<close>
+text \<open>Definition 6: Operator \<otimes>\<close>
 definition join :: "'a hyperassertion \<Rightarrow> 'a hyperassertion \<Rightarrow> 'a hyperassertion" where
   "join A B S \<longleftrightarrow> (\<exists>SA SB. A SA \<and> B SB \<and> S = SA \<union> SB)"
 
@@ -166,7 +166,7 @@ proof (rule entailsI)
 qed
 
 
-text \<open>Operator \<Otimes> (for x \<in> X) in figure 3\<close>
+text \<open>Definition 7: Operator \<Otimes> (for x \<in> X)\<close>
 definition natural_partition where
   "natural_partition I S \<longleftrightarrow> (\<exists>F. S = (\<Union>n. F n) \<and> (\<forall>n. I n (F n)))"
 
@@ -184,7 +184,7 @@ lemma natural_partitionE:
 
 subsection \<open>Rules of the Logic\<close>
 
-text \<open>Core rules from figure 4\<close>
+text \<open>Core rules from figure 3\<close>
 
 inductive syntactic_HHT ::
  "(('lvar, 'lval, 'pvar, 'pval) state hyperassertion) \<Rightarrow> ('pvar, 'pval) stmt \<Rightarrow> (('lvar, 'lval, 'pvar, 'pval) state hyperassertion) \<Rightarrow> bool"
@@ -202,7 +202,7 @@ inductive syntactic_HHT ::
 
 subsection \<open>Soundness\<close>
 
-text \<open>Definition 6: Hyper-Triples\<close>
+text \<open>Definition 5: Hyper-Triples\<close>
 definition hyper_hoare_triple ("\<Turnstile> {_} _ {_}" [51,0,0] 81) where
   "\<Turnstile> {P} C {Q} \<longleftrightarrow> (\<forall>S. P S \<longrightarrow> Q (sem C S))"
 

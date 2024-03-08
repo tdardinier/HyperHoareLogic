@@ -90,7 +90,6 @@ lemma total_hyper_triple_altI:
 lemma syntactic_frame_preserved:
   assumes "terminates_in C S"
       and "wr C \<inter> fv F = {}"
-(* needs a shift in F... *)
       and "sat_assertion vals states F S"
       and "wf_assertion_aux nv (length states) F"
     shows "sat_assertion vals states F (sem C S)"
@@ -129,9 +128,6 @@ next
 qed (fastforce+)
 
 
-
-
-
 theorem frame_rule_syntactic:
   assumes "\<Turnstile>TOT {P} C {Q}"
       and "wr C \<inter> fv F = {}" (* free *program* variables *)
@@ -152,12 +148,6 @@ proof (rule total_hyper_tripleI)
       by (metis asm0 assms(1) conj_def hyper_hoare_tripleE total_hyper_triple_def)
   qed
 qed
-
-
-
-
-
-
 
 
 
@@ -241,21 +231,6 @@ next
     using calculation transform_assume.simps(4) by fastforce
 qed (simp_all)
 
-
-
-
-
-
-
-(* Also adapt to logical variables... *)
-(*
-lemma same_syn_sem_all_assertion:
-  "interp_pbexp pb (snd (states ! st)) = sat_assertion vals states (pbexp_to_assertion st pb) S"
-proof (induct pb)
-*)
-(* What I need:
-B 0 \<longleftrightarrow>
-*)
 
 fun indep_of_set where
   "indep_of_set (AForall A) \<longleftrightarrow> indep_of_set A"
@@ -425,7 +400,6 @@ proof
 qed
 
 
-(* Question: How to syntactically guarantee this? *)
 lemma filter_rule_semantic:
   assumes "\<Turnstile> {interp_assert P} C {interp_assert Q}"
       and "same_syn_sem_all bsyn bsem"
@@ -452,27 +426,6 @@ lemma filter_rule_syntactic:
     shows "\<Turnstile> { interp_assert (transform_assume b P) } C { interp_assert (transform_assume b Q) }"
   using assms(1) filter_rule_semantic
   by (metis One_nat_def assms(2) assms(3) assms(4) syntactic_charact_for_bsem)
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 definition terminates where
@@ -858,14 +811,8 @@ proof (rule total_hyper_triple_altI)
 qed
 
 
-
-
-
 definition e_smaller_than_t_weaker where
   "e_smaller_than_t_weaker e t u lt S \<longleftrightarrow> (\<forall>\<phi>\<in>S. \<exists>\<phi>'\<in>S. fst \<phi> u = fst \<phi>' u \<and> lt (e (snd \<phi>)) (fst \<phi>' t))"
-
-
-
 
 
 lemma exists_terminates_loop:
@@ -916,22 +863,6 @@ proof (rule hyper_hoare_tripleI)
   qed
 qed
 
-
-
-
-
-(* Equivalent of whileAST unsound
-
-havoc n;
-assume n \<ge> 0
-while (n > 0)
-  invariant S = \mathbb{N}
-{
-  n--;
-}
-
-*)
-
 definition t_closed where
   "t_closed P P_inf \<longleftrightarrow> (\<forall>S. converges_sets S \<and> (\<forall>n. P n (S n)) \<longrightarrow> P_inf (\<Union>n. S n))"
 
@@ -941,14 +872,6 @@ lemma t_closedE:
       and "\<And>n. P n (S n)"
     shows "P_inf (\<Union>n. S n)"
   using TotalLogic.t_closed_def assms(1) assms(2) assms(3) by blast
-
-
-
-
-
-
-
-
 
 
 subsection \<open>Total version of core rules\<close>

@@ -1,11 +1,10 @@
 section \<open>Language and Semantics\<close>
 
 text \<open>In this file, we formalize concepts from section 3:
-- Program states (definition 1)
-- Programming language (definition 2)
+- Program states and programming language (definition 1)
 - Big-step semantics (figure 2)
-- Extended states (definition 3)
-- Extended semantics (definition 5) and some useful properties (lemma 1)\<close>
+- Extended states (definition 2)
+- Extended semantics (definition 4) and some useful properties (lemma 1)\<close>
 
 theory Language
   imports Main
@@ -16,8 +15,6 @@ subsection Language
 text \<open>Definition 1\<close>
 
 type_synonym ('var, 'val) pstate = "'var \<Rightarrow> 'val"
-
-text \<open>Definition 2\<close>
 
 type_synonym ('var, 'val) bexp = "('var, 'val) pstate \<Rightarrow> bool"
 type_synonym ('var, 'val) exp = "('var, 'val) pstate \<Rightarrow> 'val"
@@ -60,10 +57,10 @@ inductive_cases single_sem_Havoc_elim[elim!]: "\<langle>Havoc x, \<sigma>\<rangl
 
 section \<open>Extended States and Extended Semantics\<close>
 
-text \<open>Definition 3: Extended states\<close>
+text \<open>Definition 2: Extended states\<close>
 type_synonym ('lvar, 'lval, 'pvar, 'pval) state = "('lvar \<Rightarrow> 'lval) \<times> ('pvar, 'pval) pstate"
 
-text \<open>Definition 5: Extended semantics\<close>
+text \<open>Definition 4: Extended semantics\<close>
 definition sem :: "('pvar, 'pval) stmt \<Rightarrow> ('lvar, 'lval, 'pvar, 'pval) state set \<Rightarrow> ('lvar, 'lval, 'pvar, 'pval) state set" where
   "sem C S = { (l, \<sigma>') |\<sigma>' \<sigma> l. (l, \<sigma>) \<in> S \<and> \<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>' }"
 

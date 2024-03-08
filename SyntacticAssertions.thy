@@ -16,13 +16,30 @@ type_synonym 'a npstate = "(var, 'a) pstate"
 type_synonym 'a binop = "'a \<Rightarrow> 'a \<Rightarrow> 'a"
 type_synonym 'a comp = "'a \<Rightarrow> 'a \<Rightarrow> bool"
 
+text \<open>Quantified variables and quantified states are represented as de Bruijn indices (natural numbers).\<close>
+
 datatype 'a exp =
   EPVar qstate var    \<comment>\<open>\<phi>^P(x): Program variable\<close>
   | ELVar qstate var  \<comment>\<open>\<phi>^L(x): Logical variable\<close>
   | EQVar qvar        \<comment>\<open>y: Quantified variable\<close>
   | EConst 'a
-  | EBinop "'a exp" "'a binop" "'a exp"
-  | EFun "'a \<Rightarrow> 'a" "'a exp"
+  | EBinop "'a exp" "'a binop" "'a exp" \<comment>\<open>e \<oplus> e\<close>
+  | EFun "'a \<Rightarrow> 'a" "'a exp"            \<comment>\<open>f(e)\<close>
+
+text \<open>Quantified variables and quantified states are represented as de Bruijn indices (natural numbers).
+Thus, quantifiers do not have a name for the variable or state they quantify over.\<close>
+
+datatype 'a assertion =
+  AConst bool
+  | AComp "'a exp" "'a comp" "'a exp"  \<comment>\<open>e \<succeq> e\<close>
+  | AForallState "'a assertion"        \<comment>\<open>\<forall><\<phi>>. A\<close>
+  | AExistsState "'a assertion"        \<comment>\<open>\<exists><\<phi>>. A\<close>
+  | AForall "'a assertion"             \<comment>\<open>\<forall>y. A\<close>
+  | AExists "'a assertion"             \<comment>\<open>\<exists>y. A\<close>
+  | AOr "'a assertion" "'a assertion"  \<comment>\<open>A \<or> A\<close>
+  | AAnd "'a assertion" "'a assertion" \<comment>\<open>A \<and> A\<close>
+
+text \<open>We use a list of values and a list of states to track quantified values and states, respectively.\<close>
 
 fun interp_exp :: "'a list \<Rightarrow> 'a nstate list \<Rightarrow> 'a exp \<Rightarrow> 'a" where
   "interp_exp vals states (EPVar st x) = snd (states ! st) x"
@@ -31,17 +48,6 @@ fun interp_exp :: "'a list \<Rightarrow> 'a nstate list \<Rightarrow> 'a exp \<R
 | "interp_exp vals states (EConst v) = v"
 | "interp_exp vals states (EBinop e1 op e2) = op (interp_exp vals states e1) (interp_exp vals states e2)"
 | "interp_exp vals states (EFun f e) = f (interp_exp vals states e)"
-
-
-datatype 'a assertion =
-  AConst bool
-  | AComp "'a exp" "'a comp" "'a exp"
-  | AForallState "'a assertion"
-  | AExistsState "'a assertion"
-  | AForall "'a assertion"
-  | AExists "'a assertion"
-  | AOr "'a assertion" "'a assertion"
-  | AAnd "'a assertion" "'a assertion"
 
 fun sat_assertion :: "'a list \<Rightarrow> 'a nstate list \<Rightarrow> 'a assertion \<Rightarrow> 'a nstate set \<Rightarrow> bool" where
   "sat_assertion vals states (AConst b) _ \<longleftrightarrow> b"
@@ -80,6 +86,7 @@ lemma sat_assertion_Imp:
   by (simp add: AImp_def sat_assertion_Not)
 
 abbreviation interp_assert where "interp_assert \<equiv> sat_assertion [] []"
+
 
 subsection \<open>Assume rule\<close>
 
@@ -258,29 +265,13 @@ proof (rule hyper_hoare_tripleI)
     by (simp add: assume_sem)
 qed
 
-
 theorem rule_assume_syntactic:
   "\<Turnstile> { interp_assert (transform_assume (pbexp_to_assertion 0 pb) P) } Assume (interp_pbexp pb) {interp_assert P}"
   by (simp add: rule_assume_syntactic_general)
 
 
 
-
-
-
-
-
-
-
-
-
-
 subsection \<open>Havoc rule\<close>
-
-
-
-
-
 
 subsubsection \<open>Shifting variables\<close>
 
@@ -470,8 +461,6 @@ lemma subst_exp_single_charact:
   by (induct e) simp_all
 
 
-
-
 definition subst_state where
   "subst_state x pe \<phi> = (fst \<phi>, (snd \<phi>)(x := interp_pexp pe (snd \<phi>)))"
 
@@ -519,7 +508,6 @@ next
   then show ?case
     by (simp add: update_state_at_fst)
 qed (simp_all)
-
 
 
 subsubsection \<open>Assertions\<close>
@@ -607,12 +595,7 @@ next
     using subst_exp_single_charact[of vals states e st x] by auto
 qed (simp_all)
 
-(*
-lemma subst_exp_more_complex_charact:
-  assumes "states' = update_state_at states st x (interp_exp vals states e')"
-      and "st < length states"
-  shows "interp_exp vals states (subst_exp_single st x e' e) = interp_exp vals states' e"
-*)
+
 
 lemma update_state_at_cons:
   "update_state_at (\<phi> # states) (Suc n) x v = \<phi> # update_state_at states n x v"
@@ -1020,26 +1003,6 @@ qed
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 subsection \<open>Loop rules\<close>
 
 
@@ -1124,15 +1087,6 @@ qed
 
 
 
-
-
-
-
-(* Only forall quantifiers, until we have an up_closed 'a assertion *)
-(*
-All forall
-*)
-
 fun no_forall_state :: "'a assertion \<Rightarrow> bool"
   where
   "no_forall_state (AConst _) \<longleftrightarrow> True"
@@ -1160,10 +1114,6 @@ fun no_forall_state_after_existential :: "'a assertion \<Rightarrow> bool"
 | "no_forall_state_after_existential (AOr A B) \<longleftrightarrow> no_forall_state_after_existential A \<and> no_forall_state_after_existential B"
 | "no_forall_state_after_existential (AExists A) \<longleftrightarrow> no_forall_state A"
 | "no_forall_state_after_existential (AExistsState A) \<longleftrightarrow> no_forall_state A"
-
-(*
-No existential (normal and state) is before any forall state
-*)
 
 
 lemma up_closed_from_no_exists_state_false:
@@ -1581,17 +1531,6 @@ next
 qed (simp_all)
 
 
-(*
-fun fv_bexp :: "bexp \<Rightarrow> nat set" where
-  "fv_bexp BTrue = {}"
-| "fv_bexp (BNot b) = fv_bexp b"
-| "fv_bexp (BComp e1 cmp e2) = fv_exp e1 \<union> fv_exp e2"
-| "fv_bexp (BBinop b1 op b2) = fv_bexp b1 \<union> fv_bexp b2"
-| "fv_bexp (BExists b) = fv_bexp b"
-| "fv_bexp (BForall b) = fv_bexp b"
-*)
-
-
 (* program variables... *)
 fun fv where
   "fv (AAnd F1 F2) = fv F1 \<union> fv F2"
@@ -1643,9 +1582,7 @@ next
 qed (auto simp add: agree_on_def)
 
 
-(* Induction will have to do this at an arbitrary place *)
 lemma fv_wr_charact:
-(* all program variables *)
   assumes "agree_on (fv F) \<sigma> \<sigma>'"
       and "sat_assertion vals ((l, \<sigma>) # states) F S"
       and "wf_assertion_aux nv (Suc (length states)) F"
@@ -1660,7 +1597,6 @@ qed
 
 lemma syntactic_safe_frame_preserved:
   assumes "wr C \<inter> fv F = {}"
-(* needs a shift in F... *)
       and "sat_assertion vals states F S"
       and "wf_assertion_aux nv (length states) F"
       and "no_exists_state F"

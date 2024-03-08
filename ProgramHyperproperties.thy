@@ -11,11 +11,13 @@ begin
 text \<open>Definition 8\<close>
 
 type_synonym 'a hyperproperty = "('a \<times> 'a) set \<Rightarrow> bool"
+type_synonym ('pvar, 'pval) program_hyperproperty = "('pvar, 'pval) pstate hyperproperty"
+
 
 definition set_of_traces where
   "set_of_traces C = { (\<sigma>, \<sigma>') |\<sigma> \<sigma>'. \<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>' }"
 
-definition hypersat where
+definition hypersat :: "('pvar, 'pval) stmt \<Rightarrow> ('pvar, 'pval) program_hyperproperty \<Rightarrow> bool" where
   "hypersat C H \<longleftrightarrow> H (set_of_traces C)"
 
 definition copy_p_state where
