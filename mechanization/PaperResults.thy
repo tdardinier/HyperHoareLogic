@@ -12,18 +12,18 @@ section \<open>3: Hyper Hoare Logic\<close>
 subsection \<open>3.1: Language and Semantics\<close>
 
 text \<open>The programming language is defined in the file Language.thy:
-- The type of program state is \<^typ>\<open>('pvar, 'pval) pstate\<close> (<-- you can ctrl+click on the name pstate to jump to its definition).
-- Program commands are defined as the type \<^typ>\<open>('var, 'val) stmt\<close>.
-- The big-step semantics is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.\<close>
+\<^item> The type of program state is \<^typ>\<open>('pvar, 'pval) pstate\<close> (<-- you can ctrl+click on the name pstate to jump to its definition).
+\<^item> Program commands are defined as the type \<^typ>\<open>('var, 'val) stmt\<close>.
+\<^item> The big-step semantics is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.\<close>
 
 subsection \<open>3.2: Hyper-Triples, Formally\<close>
 
 text \<open>
-- Extended states (definition 2) are defined as \<^typ>\<open>('lvar, 'lval, 'pvar, 'pval) state\<close>.
-- Hyper-assertions (definition 3) are defined in the file Logic.thy as \<^typ>\<open>('lvar, 'lval, 'pvar, 'pval) state hyperassertion\<close>.
-- The extended semantics (definition 4) is defined in the file Language.thy as \<^const>\<open>sem\<close>.
-- Lemma 1 is shown and proven below.
-- Hyper-triples (definition 5) are defined in the file Logic.thy as \<^const>\<open>hyper_hoare_triple\<close>. We
+\<^item> Extended states (definition 2) are defined as \<^typ>\<open>('lvar, 'lval, 'pvar, 'pval) state\<close>.
+\<^item> Hyper-assertions (definition 3) are defined in the file Logic.thy as \<^typ>\<open>('lvar, 'lval, 'pvar, 'pval) state hyperassertion\<close>.
+\<^item> The extended semantics (definition 4) is defined in the file Language.thy as \<^const>\<open>sem\<close>.
+\<^item> Lemma 1 is shown and proven below.
+\<^item> Hyper-triples (definition 5) are defined in the file Logic.thy as \<^const>\<open>hyper_hoare_triple\<close>. We
   also use the notation \<^term>\<open>\<Turnstile> {P} C {Q}\<close>.\<close>
 
 lemma lemma1:
@@ -116,9 +116,9 @@ proposition AssumeS:
 section \<open>5: Proof Principles for Loops\<close>
 
 text \<open>We show in the following our proof rules for loops, presented in figure 6. These use the following constructs:
-- \<^term>\<open>natural_partition I\<close> corresponds to the \<Otimes> operator from definition 7.
-- \<^term>\<open>lnot b\<close> negates b.
-- \<^term>\<open>while_cond b C\<close> is defined as \<^term>\<open>While (Assume b;; C);; Assume (lnot b)\<close>.\<close>
+\<^item> \<^term>\<open>natural_partition I\<close> corresponds to the \<Otimes> operator from definition 7.
+\<^item> \<^term>\<open>lnot b\<close> negates b.
+\<^item> \<^term>\<open>while_cond b C\<close> is defined as \<^term>\<open>While (Assume b;; C);; Assume (lnot b)\<close>.\<close>
 
 theorem while_desugared:
   assumes "\<And>n. \<Turnstile> {I n} Assume b;; C {I (Suc n)}"
@@ -129,12 +129,12 @@ theorem while_desugared:
 subsection \<open>5.1: Synchronized Control Flow\<close>
 
 text \<open>In the following:
-- \<^term>\<open>conj A B\<close> corresponds to the hyper-assertion \<open>A \<and> B\<close>.
-- \<^term>\<open>holds_forall b\<close> corresponds to \<open>\<box>b\<close>.
-- \<^term>\<open>low_exp b\<close> corresponds to \<open>low(b)\<close>.
-- \<^term>\<open>disj A B\<close> corresponds to the hyper-assertion \<open>A \<or> B\<close>.
-- \<^term>\<open>emp\<close> checks whether the set of states is empty.
-- \<^term>\<open>if_then_else b C1 C2\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C1) (Assume (lnot b);; C2)\<close>.\<close>
+\<^item> \<^term>\<open>conj A B\<close> corresponds to the hyper-assertion \<open>A \<and> B\<close>.
+\<^item> \<^term>\<open>holds_forall b\<close> corresponds to \<open>\<box>b\<close>.
+\<^item> \<^term>\<open>low_exp b\<close> corresponds to \<open>low(b)\<close>.
+\<^item> \<^term>\<open>disj A B\<close> corresponds to the hyper-assertion \<open>A \<or> B\<close>.
+\<^item> \<^term>\<open>emp\<close> checks whether the set of states is empty.
+\<^item> \<^term>\<open>if_then_else b C1 C2\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C1) (Assume (lnot b);; C2)\<close>.\<close>
 
 theorem WhileSync:
   assumes "\<Turnstile> {conj I (holds_forall b)} C {conj I (low_exp b)}"
@@ -151,8 +151,8 @@ theorem IfSync:
 subsection \<open>5.2: \<forall>*\<exists>*-Hyperproperties\<close>
 
 text \<open>In the following:
-- \<^term>\<open>if_then b C\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C) (Assume (lnot b))\<close>.
-- \<^term>\<open>no_forall_state_after_existential Q\<close> holds iff there is no universal state quantifier \<forall>\<langle>_\<rangle> after any \<exists> in Q.\<close>
+\<^item> \<^term>\<open>if_then b C\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C) (Assume (lnot b))\<close>.
+\<^item> \<^term>\<open>no_forall_state_after_existential Q\<close> holds iff there is no universal state quantifier \<forall>\<langle>_\<rangle> after any \<exists> in Q.\<close>
 
 theorem while_forall_exists:
   assumes "\<Turnstile> {I} if_then b C {I}"
@@ -179,11 +179,11 @@ theorem while_loop_exists:
 section \<open>Appendix A: Technical Definitions Omitted from the Paper\<close>
 
 text \<open>The following definitions are formalized in the file SyntacticAssertions.thy:
-- Evaluation of hyper-expressions (definition 12): \<^const>\<open>interp_exp\<close>.
-- Satisfiability of hyper-assertions (definition 12): \<^const>\<open>sat_assertion\<close>.
-- Syntactic transformation for deterministic assignments (definition 13): \<^const>\<open>transform_assign\<close>.
-- Syntactic transformation for non-deterministic assignments (definition 14): \<^const>\<open>transform_havoc\<close>.
-- Syntactic transformation for assume statements. (definition 15): \<^const>\<open>transform_assume\<close>.\<close>
+\<^item> Evaluation of hyper-expressions (definition 12): \<^const>\<open>interp_exp\<close>.
+\<^item> Satisfiability of hyper-assertions (definition 12): \<^const>\<open>sat_assertion\<close>.
+\<^item> Syntactic transformation for deterministic assignments (definition 13): \<^const>\<open>transform_assign\<close>.
+\<^item> Syntactic transformation for non-deterministic assignments (definition 14): \<^const>\<open>transform_havoc\<close>.
+\<^item> Syntactic transformation for assume statements. (definition 15): \<^const>\<open>transform_assume\<close>.\<close>
 
 
 section \<open>Appendix C: Expressing Judgments of Hoare Logics as Hyper-Triples\<close>
@@ -191,8 +191,8 @@ section \<open>Appendix C: Expressing Judgments of Hoare Logics as Hyper-Triples
 subsection \<open>Appendix C.1: Overapproximate Hoare Logics\<close>
 
 text \<open>The following judgments are defined in the file Expressivity.thy as follows:
-- Definition 16 (Hoare Logic): \<^term>\<open>HL P C Q\<close>.
-- Definition 17 (Cartesian Hoare Logic): \<^term>\<open>CHL P C Q\<close>.\<close>
+\<^item> Definition 16 (Hoare Logic): \<^term>\<open>HL P C Q\<close>.
+\<^item> Definition 17 (Cartesian Hoare Logic): \<^term>\<open>CHL P C Q\<close>.\<close>
 
 proposition prop_1_HL_expresses_hyperproperties:
   "\<exists>H. (\<forall>C. hypersat C H \<longleftrightarrow> HL P C Q) \<and> k_hypersafety 1 H"
@@ -218,10 +218,10 @@ proposition prop_4_encoding_CHL_in_HHL:
 subsection \<open>Appendix C.2: Underapproximate Hoare Logics\<close>
 
 text \<open>The following judgments are defined in the file Expressivity.thy as follows:
-- Definition 18 (Incorrectness Logic): \<^term>\<open>IL P C Q\<close>.
-- Definition 19 (k-Incorrectness Logic): \<^term>\<open>RIL P C Q\<close>.
-- Definition 20 (Forward Underapproximation): \<^term>\<open>FU P C Q\<close>.
-- Definition 21 (k-Forward Underapproximation): \<^term>\<open>RFU P C Q\<close>.\<close>
+\<^item> Definition 18 (Incorrectness Logic): \<^term>\<open>IL P C Q\<close>.
+\<^item> Definition 19 (k-Incorrectness Logic): \<^term>\<open>RIL P C Q\<close>.
+\<^item> Definition 20 (Forward Underapproximation): \<^term>\<open>FU P C Q\<close>.
+\<^item> Definition 21 (k-Forward Underapproximation): \<^term>\<open>RFU P C Q\<close>.\<close>
 
 text \<open>RIL is the old name of k-IL, and RFU is the old name of k-FU.\<close>
 
@@ -271,7 +271,7 @@ proposition prop_11_encode_kFU_in_HHL:
 subsection \<open>Appendix C.3: Beyond Over- and Underapproximation\<close>
 
 text \<open>The following judgment is defined in the file Expressivity.thy as follows:
-- Definition 22 (k-Universal Existential): \<^term>\<open>RUE P C Q\<close>.
+\<^item> Definition 22 (k-Universal Existential): \<^term>\<open>RUE P C Q\<close>.
 Note that RUE is the old name of k-UE.\<close>
 
 proposition prop_12_kUE_expresses_hyperproperty:
