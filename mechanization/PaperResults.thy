@@ -501,6 +501,7 @@ theorem rule_WhileSyncTot:
 
 section \<open>Appendix H: Synchronous Reasoning over Different Branches\<close>
 
+text \<open>Proposition 14: Synchronous if rule\<close>
 proposition prop_14_synchronized_if_rule:
   assumes "\<Turnstile> {P} C1 {P1}"
       and "\<Turnstile> {P} C2 {P2}"
@@ -509,10 +510,10 @@ proposition prop_14_synchronized_if_rule:
       and "\<Turnstile> {R2} C2' {Q2}"
       and "not_free_var_hyper x P1"
       and "not_free_var_hyper x P2"
-      and "injective (from_nat :: nat \<Rightarrow> 'a)"
+      and "from_nat 1 \<noteq> from_nat 2" \<comment>\<open>We can represent 1 and 2 as distinct logical values.\<close>
       and "not_free_var_hyper x R1"
       and "not_free_var_hyper x R2"
     shows "\<Turnstile> {P} If (Seq C1 (Seq C C1')) (Seq C2 (Seq C C2')) {join Q1 Q2}"
-  using if_sync_rule assms by fast
+  using if_sync_rule assms by meson
 
 end

@@ -751,7 +751,7 @@ proof (rule total_hyper_tripleI)
     by (meson assms(1) assms(3) entailsE total_hyper_triple_def)
 qed
 
-theorem rule_WhileSyncTot:
+theorem WhileSyncTot:
   assumes "wfP lt"
       and "not_fv_hyper t I"
       and "\<Turnstile>TOT {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"

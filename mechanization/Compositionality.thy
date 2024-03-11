@@ -721,7 +721,7 @@ theorem if_sync_rule:
 
       and "not_free_var_hyper x P1"
       and "not_free_var_hyper x P2"
-      and "injective (from_nat :: nat \<Rightarrow> 'a)"
+      and "from_nat 1 \<noteq> from_nat 2"
 
       and "not_free_var_hyper x R1"
       and "not_free_var_hyper x R2"
@@ -740,23 +740,20 @@ proof (rule hyper_hoare_tripleI)
   let ?f1 = "Set.filter (\<lambda>\<phi>. fst \<phi> x = from_nat 1)"
   let ?f2 = "Set.filter (\<lambda>\<phi>. fst \<phi> x = from_nat 2)"
 
-  have r: "from_nat 1 \<noteq> from_nat 2"
-    by (metis Suc_1 assms(8) injective_def n_not_Suc_n)
-
   have "P1 ?S1 \<and> P2 ?S2"
     by (meson \<open>P1 (sem C1 S) \<and> P2 (sem C2 S)\<close> assms(6) assms(7) not_free_var_hyper_def)
   moreover have rr1: "Set.filter (\<lambda>\<phi>. fst \<phi> x = from_nat 1) (?S1 \<union> ?S2) = ?S1"
     using injective_then_ok[of "from_nat 1" "from_nat 2" ?S1 x]
-    by (metis (no_types, lifting) assms(8) injective_def num.simps(4) one_eq_numeral_iff)
+    by (metis (no_types, lifting) assms(8))
   moreover have rr2: "Set.filter (\<lambda>\<phi>. fst \<phi> x = from_nat 2) (?S1 \<union> ?S2) = ?S2"
     using injective_then_ok[of "from_nat 2" "from_nat 1" ?S2 x]
-    by (metis (no_types, lifting) assms(8) injective_def one_eq_numeral_iff sup_commute verit_eq_simplify(10))
+    by (metis (no_types, lifting) assms(8) sup_commute)
   ultimately have "combine from_nat x P1 P2 (?S1 \<union> ?S2)"
     by (metis combineI)
   then have "combine from_nat x R1 R2 (sem C (?S1 \<union> ?S2))"
     using assms(3) hyper_hoare_tripleE by blast
   moreover have "?f1 (sem C (?S1 \<union> ?S2)) = sem C ?S1"
-    using recover_after_sem[of "from_nat 1" "from_nat 2" ?S1 x ?S2] r rr1 rr2
+    using recover_after_sem[of "from_nat 1" "from_nat 2" ?S1 x ?S2] assms(8) rr1 rr2
       member_filter[of _ "\<lambda>\<phi>. fst \<phi> x = from_nat 1"] member_filter[of _ "\<lambda>\<phi>. fst \<phi> x = from_nat 2"]
     by metis
   then have "R1 (sem C ?S1)"
@@ -764,7 +761,7 @@ proof (rule hyper_hoare_tripleI)
   then have "R1 (sem C (sem C1 S))"
     by (metis assms(9) not_free_var_hyper_def sem_of_modify_lvar)
   moreover have "?f2 (sem C (?S1 \<union> ?S2)) = sem C ?S2"
-    using recover_after_sem[of "from_nat 2" "from_nat 1" ?S2 x ?S1] r rr1 rr2 sup_commute[of ]
+    using recover_after_sem[of "from_nat 2" "from_nat 1" ?S2 x ?S1] assms(8) rr1 rr2 sup_commute[of ]
       member_filter[of _ "\<lambda>\<phi>. fst \<phi> x = from_nat 1" "?S1 \<union> ?S2"] member_filter[of _ "\<lambda>\<phi>. fst \<phi> x = from_nat 2" "?S1 \<union> ?S2"]
     by metis
   then have "R2 (sem C ?S2)"
