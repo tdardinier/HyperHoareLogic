@@ -1763,6 +1763,11 @@ lemma not_free_in_sem_equiv:
 
 paragraph \<open>Example 3\<close>
 
+lemma rewrite_if_commute:
+  assumes "\<Turnstile> { P } If C1 C2 {Q}"
+  shows "\<Turnstile> { P } If C2 C1 {Q}"
+  by (metis assms hyper_hoare_triple_def sem_if sup_commute)
+
 theorem encoding_refinement:
   fixes P :: "(('lvar \<Rightarrow> 'lval) \<times> ('pvar \<Rightarrow> 'pval)) set \<Rightarrow> bool"
   assumes "(a :: 'pval) \<noteq> b"

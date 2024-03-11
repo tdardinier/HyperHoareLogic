@@ -106,6 +106,15 @@ lemma closed_by_union_under:
 definition conj where
   "conj P Q S \<longleftrightarrow> P S \<and> Q S"
 
+lemma entail_conj:
+  assumes "entails A B"
+  shows "entails A (conj A B)"
+  by (metis (full_types) assms conj_def entails_def)
+
+lemma entail_conj_weaken:
+  "entails (conj A B) A"
+  by (simp add: conj_def entails_def)
+
 definition disj where
   "disj P Q S \<longleftrightarrow> P S \<or> Q S"
 

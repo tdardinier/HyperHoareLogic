@@ -319,6 +319,11 @@ proof (rule hyper_hoare_tripleI)
   qed
 qed
 
+lemma WhileSync_simpler:
+  assumes "\<Turnstile> {conj I (holds_forall b)} C {conj I (low_exp b)}"
+  shows "\<Turnstile> {conj I (low_exp b)} while_cond b C {conj (disj I emp) (holds_forall (lnot b))}"
+  using assms while_synchronized[of "\<lambda>n. I"]
+  by (simp add: disj_def Loops.exists_def conj_def hyper_hoare_triple_def)
 
 definition if_then where
   "if_then b C = If (Assume b;; C) (Assume (lnot b))"

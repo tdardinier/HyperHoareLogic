@@ -57,7 +57,7 @@ lemma snd_update_logical_same:
   "snd (update_logical \<omega> i v) = snd \<omega>"
   by (simp add: update_logical_def)
 
-text \<open>Figure 8\<close>
+text \<open>Figure 12\<close>
 proposition composing_monotonicity_and_minimum:
   fixes P :: "((('a \<Rightarrow> 'b) \<times> ('c \<Rightarrow> 'd)) set \<Rightarrow> bool)"
   fixes i :: 'a
@@ -179,7 +179,7 @@ proof (rule seq_rule)
           "\<And>\<omega>'. \<omega>' \<in> S \<Longrightarrow> fst \<omega>' i = one \<or> fst \<omega>' i = two"
           by (simp add: conj_def)
         then obtain \<omega> where "Set.filter (\<lambda>\<omega>. fst \<omega> i = one) S = {\<omega>}"
-          by (metis is_singleton_def One_nat_def card_1_singleton_iff)
+          by (metis is_singleton_def)
         then have "\<omega> \<in> S" by auto
         then show "has_minimum y leq S"
         proof (rule has_minimumI)
@@ -224,7 +224,7 @@ text \<open>In this definition, we use a logical variable for h, which records t
 definition lGNI :: "'pvar \<Rightarrow> 'lvar \<Rightarrow> (('lvar, 'lval, 'pvar, 'pval) state) set \<Rightarrow> bool" where
   "lGNI l h S \<longleftrightarrow> (\<forall>\<phi>1 \<in> S. (\<forall>\<phi>2 \<in> S. \<exists>\<phi> \<in> S. fst \<phi> h = fst \<phi>1 h \<and> snd \<phi> l = snd \<phi>2 l))"
 
-text \<open>Figure 9\<close>
+text \<open>Figure 13\<close>
 proposition composing_GNI_with_SNI:
   fixes h :: 'lvar
   fixes l :: 'pvar

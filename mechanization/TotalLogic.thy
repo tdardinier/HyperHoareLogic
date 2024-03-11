@@ -730,15 +730,49 @@ proof (rule total_hyper_triple_altI)
       by (simp add: asm1 assign_exp_to_lvar_set_def)
     then obtain \<sigma>' where "\<langle>C, snd (assign_exp_to_lvar e t \<phi>)\<rangle> \<rightarrow> \<sigma>'"
       by (meson \<open>Logic.conj (Logic.conj (I n) (holds_forall b)) (e_recorded_in_t e t) (assign_exp_to_lvar_set e t (iterate_sem n (Assume b ;; C) S))\<close> assms(3) total_hyper_triple_def)    
-    then have "\<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>' \<and> (fst (assign_exp_to_lvar e t \<phi>), \<sigma>') \<in> sem C ?SS"
+    then have "(\<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>') \<and> (fst (assign_exp_to_lvar e t \<phi>), \<sigma>') \<in> sem C ?SS"
       by (metis \<open>assign_exp_to_lvar e t \<phi> \<in> assign_exp_to_lvar_set e t (iterate_sem n (Assume b ;; C) S)\<close> assign_exp_to_lvar_def prod.collapse single_step_then_in_sem snd_conv)
     then have "lt (e \<sigma>') (fst (fst (assign_exp_to_lvar e t \<phi>), \<sigma>') t)"
       by (metis calculation conj_def e_smaller_than_t_def snd_conv)
-    then show "\<exists>\<sigma>'. \<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>' \<and> (\<not> b \<sigma>' \<or> lt (e \<sigma>') (e (snd \<phi>)))"
-      by (metis \<open>\<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>' \<and> (fst (assign_exp_to_lvar e t \<phi>), \<sigma>') \<in> sem C (assign_exp_to_lvar_set e t (iterate_sem n (Assume b ;; C) S))\<close> assign_exp_to_lvar_def fst_conv fun_upd_same)
+    then show "\<exists>\<sigma>'. (\<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>') \<and> (\<not> b \<sigma>' \<or> lt (e \<sigma>') (e (snd \<phi>)))"
+      by (metis \<open>(\<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>') \<and> (fst (assign_exp_to_lvar e t \<phi>), \<sigma>') \<in> sem C (assign_exp_to_lvar_set e t (iterate_sem n (Assume b ;; C) S))\<close> assign_exp_to_lvar_def fst_conv fun_upd_same)
   qed
-
 qed
+
+lemma total_consequence_rule:
+  assumes "entails P P'"
+    and "entails Q' Q"
+      and "\<Turnstile>TOT {P'} C {Q'}"
+    shows "\<Turnstile>TOT {P} C {Q}"
+proof (rule total_hyper_tripleI)
+  show "\<Turnstile> {P} C {Q}"
+    using assms(1) assms(2) assms(3) consequence_rule total_hyper_triple_def by blast
+  fix \<phi> S show "P S \<and> \<phi> \<in> S \<Longrightarrow> \<exists>\<sigma>'. \<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>'"
+    by (meson assms(1) assms(3) entailsE total_hyper_triple_def)
+qed
+
+theorem rule_WhileSyncTot:
+  assumes "wfP lt"
+      and "not_fv_hyper t I"
+      and "\<Turnstile>TOT {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+    shows "\<Turnstile>TOT {conj I (low_exp b)} while_cond b C {conj I (holds_forall (lnot b))}"
+proof -
+  define I' where "I' = (\<lambda>(n::nat). I)"
+  have "\<Turnstile>TOT {conj (conj I (holds_forall b)) (e_recorded_in_t e t)} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+  proof (rule total_consequence_rule)
+    show "\<Turnstile>TOT {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+      using assms(3) by blast
+    show "entails (Logic.conj (Logic.conj I (holds_forall b)) (e_recorded_in_t e t)) (Logic.conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>)))"
+      by (simp add: conj_def e_recorded_in_t_def entails_def holds_forall_def)
+  qed (simp add: entails_refl)
+  then have "\<Turnstile>TOT {Logic.conj (I' 0) (low_exp b)} while_cond b C {Logic.conj (Loops.exists I') (holds_forall (lnot b))}"
+    using while_synchronized_tot[of lt t I' b e C] I'_def assms by blast
+  then show ?thesis using I'_def
+    by (simp add: Loops.exists_def conj_def hyper_hoare_triple_def total_hyper_triple_def)
+qed
+
+
+
 
 lemma total_hyper_tripleE:
   assumes "\<Turnstile>TOT {P} C {Q}"
@@ -934,18 +968,6 @@ lemma in_semI:
     shows "\<phi>' \<in> sem C S"
   using assms
   by (metis (no_types, lifting) prod.collapse single_step_then_in_sem)
-
-lemma total_consequence_rule:
-  assumes "entails P P'"
-    and "entails Q' Q"
-      and "\<Turnstile>TOT {P'} C {Q'}"
-    shows "\<Turnstile>TOT {P} C {Q}"
-proof (rule total_hyper_tripleI)
-  show "\<Turnstile> {P} C {Q}"
-    using assms(1) assms(2) assms(3) consequence_rule total_hyper_triple_def by blast
-  fix \<phi> S show "P S \<and> \<phi> \<in> S \<Longrightarrow> \<exists>\<sigma>'. \<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>'"
-    by (meson assms(1) assms(3) entailsE total_hyper_triple_def)
-qed
 
 
 theorem normal_while_tot_stronger:

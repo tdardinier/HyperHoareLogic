@@ -1300,7 +1300,6 @@ theorem while_general_syntactic:
     shows "\<Turnstile> {P 0} while_cond b C {conj (interp_assert A) (holds_forall (lnot b))}"
   by (metis assms(1) assms(2) assms(3) upwards_closed_syn_sem_practical while_general)
 
-
 (* Side-conditions: No normal existential on the left of a forallstate, no existential state *)
 theorem while_d_syntactic:
   assumes "\<Turnstile> { interp_assert A } if_then b C { interp_assert A }"
