@@ -411,7 +411,7 @@ proposition rule_True:
   by (simp add: hyper_hoare_triple_def)
 
 
-(* Other direction might not hold! *)
+(* Other direction does not hold! *)
 lemma sem_inter:
   "sem C (S1 \<inter> S2) \<subseteq> sem C S1 \<inter> sem C S2"
   by (simp add: sem_monotonic)

@@ -538,6 +538,13 @@ lemma upwards_closedI:
   shows "upwards_closed P P_inf"
   using assms upwards_closed_def by blast
 
+lemma upwards_closedE:
+  assumes "upwards_closed P P_inf"
+      and "ascending S"
+      and "\<And>n. P n (S n)"
+    shows "P_inf (\<Union>n. S n)"
+  using assms(1) assms(2) assms(3) upwards_closed_def by blast
+
 lemma ascending_iterate_filter:
   "ascending (\<lambda>n. filter_exp (lnot b) (union_up_to_n (if_then b C) S n))"
   by (metis ascendingI iterate_sem_assume_increasing iterate_sem_assume_increasing_union_up_to)

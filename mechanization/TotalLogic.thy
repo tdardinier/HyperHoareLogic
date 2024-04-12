@@ -3,17 +3,17 @@ theory TotalLogic
 begin
 
 
-definition total_hyper_triple ("\<Turnstile>TOT {_} _ {_}" [51,0,0] 81) where
-  "\<Turnstile>TOT {P} C {Q} \<longleftrightarrow> ( \<Turnstile> {P} C {Q} \<and> (\<forall>S. P S \<longrightarrow> (\<forall>\<phi> \<in> S. \<exists>\<sigma>'. single_sem C (snd \<phi>) \<sigma>' )))"
+definition total_hyper_triple ("\<Turnstile>TERM {_} _ {_}" [51,0,0] 81) where
+  "\<Turnstile>TERM {P} C {Q} \<longleftrightarrow> ( \<Turnstile> {P} C {Q} \<and> (\<forall>S. P S \<longrightarrow> (\<forall>\<phi> \<in> S. \<exists>\<sigma>'. single_sem C (snd \<phi>) \<sigma>' )))"
 
 lemma total_hyper_triple_equiv:
-  "\<Turnstile>TOT {P} C {Q} \<longleftrightarrow> ( \<Turnstile> {P} C {Q} \<and> (\<forall>S. P S \<longrightarrow> (\<forall>\<phi> \<in> S. \<exists>\<sigma>'. (fst \<phi>, \<sigma>') \<in> sem C S \<and> single_sem C (snd \<phi>) \<sigma>' )))"
+  "\<Turnstile>TERM {P} C {Q} \<longleftrightarrow> ( \<Turnstile> {P} C {Q} \<and> (\<forall>S. P S \<longrightarrow> (\<forall>\<phi> \<in> S. \<exists>\<sigma>'. (fst \<phi>, \<sigma>') \<in> sem C S \<and> single_sem C (snd \<phi>) \<sigma>' )))"
   by (metis prod.collapse single_step_then_in_sem total_hyper_triple_def)
 
 lemma total_hyper_tripleI:
   assumes "\<Turnstile> {P} C {Q}"
       and "\<And>\<phi> S. P S \<and> \<phi> \<in> S \<Longrightarrow> (\<exists>\<sigma>'. single_sem C (snd \<phi>) \<sigma>' )"
-    shows "\<Turnstile>TOT {P} C {Q}"
+    shows "\<Turnstile>TERM {P} C {Q}"
   by (simp add: assms(1) assms(2) total_hyper_triple_def)
 
 definition terminates_in where
@@ -62,7 +62,7 @@ proof (rule terminates_inI)
       then have "\<not> b \<sigma>' \<or> e \<sigma>' \<notin> ?Q"
         using \<open>z = e (snd \<phi>')\<close> asm1(2) by blast
       moreover have "(fst \<phi>', \<sigma>') \<in> sem (Assume b;; C) (iterate_sem n (Assume b;; C) ?S)"
-        by (metis (no_types, opaque_lifting) SemAssume SemSeq \<open>\<langle>C, snd \<phi>'\<rangle> \<rightarrow> \<sigma>' \<and> (\<not> b \<sigma>' \<or> lt (e \<sigma>') (e (snd \<phi>')))\<close> \<open>\<phi>' \<in> iterate_sem n (Assume b ;; C) ?S\<close> \<open>b (snd \<phi>')\<close> single_step_then_in_sem surjective_pairing)
+        by (metis (no_types, opaque_lifting) SemAssume SemSeq \<open>(\<langle>C, snd \<phi>'\<rangle> \<rightarrow> \<sigma>') \<and> (\<not> b \<sigma>' \<or> lt (e \<sigma>') (e (snd \<phi>')))\<close> \<open>\<phi>' \<in> iterate_sem n (Assume b ;; C) ?S\<close> \<open>b (snd \<phi>')\<close> single_step_then_in_sem surjective_pairing)
       ultimately have "\<not> b \<sigma>'"
         using iterate_sem.simps(2)[of n "Assume b;; C" "{\<phi>}"] mem_Collect_eq snd_conv
         by (metis (mono_tags, lifting))
@@ -82,7 +82,7 @@ qed
 lemma total_hyper_triple_altI:
   assumes "\<And>S. P S \<Longrightarrow> Q (sem C S)"
       and "\<And>S. P S \<Longrightarrow> terminates_in C S"
-    shows "\<Turnstile>TOT {P} C {Q}"
+    shows "\<Turnstile>TERM {P} C {Q}"
   by (metis assms(1) assms(2) hyper_hoare_tripleI terminates_in_def total_hyper_triple_def)
 
 
@@ -129,10 +129,10 @@ qed (fastforce+)
 
 
 theorem frame_rule_syntactic:
-  assumes "\<Turnstile>TOT {P} C {Q}"
+  assumes "\<Turnstile>TERM {P} C {Q}"
       and "wr C \<inter> fv F = {}" (* free *program* variables *)
       and "wf_assertion F" (* No unbound free variable *)
-    shows "\<Turnstile>TOT {conj P (interp_assert F)} C {conj Q (interp_assert F)}"
+    shows "\<Turnstile>TERM {conj P (interp_assert F)} C {conj Q (interp_assert F)}"
 proof (rule total_hyper_tripleI)
   let ?F = "interp_assert F"
   show "\<And>\<phi> S. Logic.conj P ?F S \<and> \<phi> \<in> S \<Longrightarrow> \<exists>\<sigma>'. \<langle>C, snd \<phi>\<rangle> \<rightarrow> \<sigma>'"
@@ -439,7 +439,7 @@ lemma terminatesI:
 lemma terminates_implies_total:
   assumes "\<Turnstile> {P} C {Q}"
       and "terminates C"
-    shows "\<Turnstile>TOT {P} C {Q}"
+    shows "\<Turnstile>TERM {P} C {Q}"
   using assms(1)
 proof (rule total_hyper_tripleI)
   fix \<phi> S assume asm0: "P S \<and> \<phi> \<in> S"
@@ -472,8 +472,8 @@ lemma rule_lframe_exist:
    fixes b :: "('a \<Rightarrow> ('lvar \<Rightarrow> 'lval)) \<Rightarrow> bool"
     \<comment>\<open>b takes a mapping from keys to logical states (representing the tuple), and returns a boolean\<close>
 
-   assumes "\<Turnstile>TOT {P} C {Q}"
-     shows "\<Turnstile>TOT { conj P (\<lambda>S. \<exists>\<phi>. (\<forall>k. \<phi> k \<in> S) \<and> b (fst \<circ> \<phi>)) } C { conj Q (\<lambda>S. \<exists>\<phi>. (\<forall>k. \<phi> k \<in> S) \<and> b (fst \<circ> \<phi>)) }"
+   assumes "\<Turnstile>TERM {P} C {Q}"
+     shows "\<Turnstile>TERM { conj P (\<lambda>S. \<exists>\<phi>. (\<forall>k. \<phi> k \<in> S) \<and> b (fst \<circ> \<phi>)) } C { conj Q (\<lambda>S. \<exists>\<phi>. (\<forall>k. \<phi> k \<in> S) \<and> b (fst \<circ> \<phi>)) }"
 
 proof (rule total_hyper_tripleI)
   fix \<phi> S
@@ -537,7 +537,7 @@ lemma min_prop_charact:
 
 
 lemma hyper_tot_set_not_empty:
-  assumes "\<Turnstile>TOT {P} C {Q}"
+  assumes "\<Turnstile>TERM {P} C {Q}"
       and "P S"
       and "S \<noteq> {}"
     shows "sem C S \<noteq> {}"
@@ -560,8 +560,8 @@ qed
 theorem while_synchronized_tot:
   assumes "wfP lt"
       and "\<And>n. not_fv_hyper t (I n)"
-      and "\<And>n. \<Turnstile>TOT {conj (conj (I n) (holds_forall b)) (e_recorded_in_t e t)} C {conj (conj (I (Suc n)) (low_exp b)) (e_smaller_than_t e t lt)}"
-    shows "\<Turnstile>TOT {conj (I 0) (low_exp b)} while_cond b C {conj (exists I) (holds_forall (lnot b))}"
+      and "\<And>n. \<Turnstile>TERM {conj (conj (I n) (holds_forall b)) (e_recorded_in_t e t)} C {conj (conj (I (Suc n)) (low_exp b)) (e_smaller_than_t e t lt)}"
+    shows "\<Turnstile>TERM {conj (I 0) (low_exp b)} while_cond b C {conj (exists I) (holds_forall (lnot b))}"
 proof (rule total_hyper_triple_altI)
   fix S assume asm0: "conj (I 0) (low_exp b) S"
   let ?S = "\<lambda>n. assign_exp_to_lvar_set e t (iterate_sem n (Assume b;; C) S)"
@@ -742,8 +742,8 @@ qed
 lemma total_consequence_rule:
   assumes "entails P P'"
     and "entails Q' Q"
-      and "\<Turnstile>TOT {P'} C {Q'}"
-    shows "\<Turnstile>TOT {P} C {Q}"
+      and "\<Turnstile>TERM {P'} C {Q'}"
+    shows "\<Turnstile>TERM {P} C {Q}"
 proof (rule total_hyper_tripleI)
   show "\<Turnstile> {P} C {Q}"
     using assms(1) assms(2) assms(3) consequence_rule total_hyper_triple_def by blast
@@ -754,18 +754,18 @@ qed
 theorem WhileSyncTot:
   assumes "wfP lt"
       and "not_fv_hyper t I"
-      and "\<Turnstile>TOT {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
-    shows "\<Turnstile>TOT {conj I (low_exp b)} while_cond b C {conj I (holds_forall (lnot b))}"
+      and "\<Turnstile>TERM {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+    shows "\<Turnstile>TERM {conj I (low_exp b)} while_cond b C {conj I (holds_forall (lnot b))}"
 proof -
   define I' where "I' = (\<lambda>(n::nat). I)"
-  have "\<Turnstile>TOT {conj (conj I (holds_forall b)) (e_recorded_in_t e t)} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+  have "\<Turnstile>TERM {conj (conj I (holds_forall b)) (e_recorded_in_t e t)} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
   proof (rule total_consequence_rule)
-    show "\<Turnstile>TOT {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+    show "\<Turnstile>TERM {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
       using assms(3) by blast
     show "entails (Logic.conj (Logic.conj I (holds_forall b)) (e_recorded_in_t e t)) (Logic.conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>)))"
       by (simp add: conj_def e_recorded_in_t_def entails_def holds_forall_def)
   qed (simp add: entails_refl)
-  then have "\<Turnstile>TOT {Logic.conj (I' 0) (low_exp b)} while_cond b C {Logic.conj (Loops.exists I') (holds_forall (lnot b))}"
+  then have "\<Turnstile>TERM {Logic.conj (I' 0) (low_exp b)} while_cond b C {Logic.conj (Loops.exists I') (holds_forall (lnot b))}"
     using while_synchronized_tot[of lt t I' b e C] I'_def assms by blast
   then show ?thesis using I'_def
     by (simp add: Loops.exists_def conj_def hyper_hoare_triple_def total_hyper_triple_def)
@@ -775,7 +775,7 @@ qed
 
 
 lemma total_hyper_tripleE:
-  assumes "\<Turnstile>TOT {P} C {Q}"
+  assumes "\<Turnstile>TERM {P} C {Q}"
       and "P S"
       and "\<phi> \<in> S"
     shows "\<exists>\<sigma>'. (fst \<phi>, \<sigma>') \<in> sem C S \<and> single_sem C (snd \<phi>) \<sigma>'"
@@ -783,14 +783,14 @@ lemma total_hyper_tripleE:
 
 theorem normal_while_tot:
   assumes "\<And>n. \<Turnstile> {P n} Assume b {Q n}"
-      and "\<And>n. \<Turnstile>TOT {conj (Q n) (e_recorded_in_t e t)} C {conj (P (Suc n)) (e_smaller_than_t e t lt)}"
+      and "\<And>n. \<Turnstile>TERM {conj (Q n) (e_recorded_in_t e t)} C {conj (P (Suc n)) (e_smaller_than_t e t lt)}"
       and "\<Turnstile> {natural_partition P} Assume (lnot b) {R}"
 
       and "wfP lt"
       and "\<And>n. not_fv_hyper t (P n)"
       and "\<And>n. not_fv_hyper t (Q n)"
 
-    shows "\<Turnstile>TOT {P 0} while_cond b C {R}"
+    shows "\<Turnstile>TERM {P 0} while_cond b C {R}"
 proof (rule total_hyper_triple_altI)
   fix S assume asm0: "P 0 S"
   have "\<And>n. P n (iterate_sem n (Assume b;; C) S)"
@@ -911,13 +911,13 @@ lemma t_closedE:
 subsection \<open>Total version of core rules\<close>
 
 lemma total_skip_rule:
-  "\<Turnstile>TOT {P} Skip {P}"
+  "\<Turnstile>TERM {P} Skip {P}"
   by (meson SemSkip skip_rule total_hyper_triple_def)
 
 lemma total_seq_rule:
-  assumes "\<Turnstile>TOT {P} C1 {R}"
-    and "\<Turnstile>TOT {R} C2 {Q}"
-  shows "\<Turnstile>TOT {P} Seq C1 C2 {Q}"
+  assumes "\<Turnstile>TERM {P} C1 {R}"
+    and "\<Turnstile>TERM {R} C2 {Q}"
+  shows "\<Turnstile>TERM {P} Seq C1 C2 {Q}"
 proof (rule total_hyper_tripleI)
   show "\<Turnstile> {P} C1 ;; C2 {Q}"
     using assms(1) assms(2) seq_rule total_hyper_triple_def by blast
@@ -932,9 +932,9 @@ proof (rule total_hyper_tripleI)
 qed
 
 lemma total_if_rule:
-  assumes "\<Turnstile>TOT {P} C1 {Q1}"
-      and "\<Turnstile>TOT {P} C2 {Q2}"
-    shows "\<Turnstile>TOT {P} If C1 C2 {join Q1 Q2}"
+  assumes "\<Turnstile>TERM {P} C1 {Q1}"
+      and "\<Turnstile>TERM {P} C2 {Q2}"
+    shows "\<Turnstile>TERM {P} If C1 C2 {join Q1 Q2}"
 proof (rule total_hyper_tripleI)
   show "\<Turnstile> {P} stmt.If C1 C2 {join Q1 Q2}"
     using assms(1) assms(2) if_rule total_hyper_triple_equiv by blast
@@ -945,19 +945,19 @@ qed
 
 
 lemma total_rule_exists:
-  assumes "\<And>x. \<Turnstile>TOT {P x} C {Q x}"
-  shows "\<Turnstile>TOT {exists P} C {exists Q}"
+  assumes "\<And>x. \<Turnstile>TERM {P x} C {Q x}"
+  shows "\<Turnstile>TERM {exists P} C {exists Q}"
   using total_hyper_tripleI[of "exists P" C "exists Q"]
   by (metis (mono_tags, lifting) Loops.exists_def assms hyper_hoare_triple_def total_hyper_triple_def)
 
 
 lemma total_assign_rule:
-  "\<Turnstile>TOT { (\<lambda>S. P { (l, \<sigma>(x := e \<sigma>)) |l \<sigma>. (l, \<sigma>) \<in> S }) } (Assign x e) {P}"
+  "\<Turnstile>TERM { (\<lambda>S. P { (l, \<sigma>(x := e \<sigma>)) |l \<sigma>. (l, \<sigma>) \<in> S }) } (Assign x e) {P}"
   using total_hyper_tripleI[of _ "Assign x e" P]
   using SemAssign assign_rule by fastforce
 
 lemma total_havoc_rule:
-  "\<Turnstile>TOT { (\<lambda>S. P { (l, \<sigma>(x := v)) |l \<sigma> v. (l, \<sigma>) \<in> S }) } (Havoc x) {P}"
+  "\<Turnstile>TERM { (\<lambda>S. P { (l, \<sigma>(x := v)) |l \<sigma> v. (l, \<sigma>) \<in> S }) } (Havoc x) {P}"
   using total_hyper_tripleI[of _ "Havoc x" P]
   using SemHavoc havoc_rule by fastforce
 
@@ -974,7 +974,7 @@ theorem normal_while_tot_stronger:
   fixes P :: "nat \<Rightarrow> ('lvar, 'lval, 'pvar, 'pval) state set \<Rightarrow> bool"
 
   assumes "\<And>n. \<Turnstile> {P n} Assume b {Q n}"
-      and "\<And>n. \<Turnstile>TOT {conj (Q n) (e_recorded_in_t e t)} C {conj (P (Suc n)) (e_smaller_than_t_weaker e t u lt)}"
+      and "\<And>n. \<Turnstile>TERM {conj (Q n) (e_recorded_in_t e t)} C {conj (P (Suc n)) (e_smaller_than_t_weaker e t u lt)}"
       and "\<Turnstile> {natural_partition P} Assume (lnot b) {R}"
 
       and "wfP lt"
@@ -987,7 +987,7 @@ theorem normal_while_tot_stronger:
       and "(tr :: 'lval) \<noteq> fa"
       and "u \<noteq> t"
 
-    shows "\<Turnstile>TOT {P 0} while_cond b C {R}"
+    shows "\<Turnstile>TERM {P 0} while_cond b C {R}"
 proof (rule total_hyper_triple_altI)
   fix S :: "('lvar, 'lval, 'pvar, 'pval) state set"
   assume asm0: "P 0 S"

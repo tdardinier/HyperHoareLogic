@@ -9,15 +9,17 @@ and with the same structure as the paper.
 \<^item> After jumping to another location, you can come back to the previous location by clicking the
   green left arrow, on the right side of the menu above.\<close>
 
+
+
 section \<open>3: Hyper Hoare Logic\<close>
 
 subsection \<open>3.1: Language and Semantics\<close>
 
 text \<open>The programming language is defined in the file Language.thy:
 \<^item> The type of program state (definition 1) is \<^typ>\<open>('pvar, 'pval) pstate\<close>
-  (<-- you can ctrl+click on the name \<open>pstate\<close> to jump to its definition).
+  (<-- you can ctrl+click on the name \<open>pstate\<close> above to jump to its definition).
 \<^item> Program commands (definition 1) are defined via the type \<^typ>\<open>('var, 'val) stmt\<close>.
-\<^item> The big-step semantics (figure 2) is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.\<close>
+\<^item> The big-step semantics (figure 9) is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.\<close>
 
 subsection \<open>3.2: Hyper-Triples, Formally\<close>
 
@@ -41,7 +43,7 @@ lemma lemma1:
 
 subsection \<open>3.3: Core Rules\<close>
 
-text \<open>The core rules (from figure 3) are defined in the file Logic.thy as \<^const>\<open>syntactic_HHT\<close>.
+text \<open>The core rules (from figure 2) are defined in the file Logic.thy as \<^const>\<open>syntactic_HHT\<close>.
 We also use the notation \<^term>\<open>\<turnstile> {P} C {Q}\<close>. Operators \<otimes> (definition 6) and \<Otimes> (definition 7)
 are defined as \<^const>\<open>join\<close> and \<^const>\<open>natural_partition\<close>, respectively.\<close>
 
@@ -78,10 +80,17 @@ theorem thm3_expressing_hyperproperties_as_hyper_triples:
   using assms proving_hyperproperties
   by blast
 
-text \<open>Theorem 4: Disproving hyper-triples\<close>
-theorem thm4_disproving_triples:
+text \<open>Theorem 4: Expressing hyper-triples as hyperproperties\<close>
+theorem thm4_expressing_hyper_triples_as_hyperproperties:
+  "\<Turnstile> {P} C {Q} \<longleftrightarrow> hypersat C (hyperprop_hht P Q)"
+  by (simp add: any_hht_hyperprop)
+
+text \<open>Theorem 5: Disproving hyper-triples\<close>
+theorem thm5_disproving_triples:
   "\<not> \<Turnstile> {P} C {Q} \<longleftrightarrow> (\<exists>P'. sat P' \<and> entails P' P \<and> \<Turnstile> {P'} C {\<lambda>S. \<not> Q S})"
   using disproving_triple by auto
+
+
 
 
 section \<open>4: Syntactic Rules\<close>
@@ -95,30 +104,30 @@ for states and variables bound by quantifiers.\<close>
 
 subsection \<open>4.2: Syntactic Rules for Deterministic and Non-Deterministic Assignments.\<close>
 
-text \<open>We prove semantic versions of the syntactic rules from section 4 (figure 4).
+text \<open>We prove semantic versions of the syntactic rules from section 4 (figure 3).
 We use \<^const>\<open>interp_assert\<close> to convert a syntactic hyper-assertion into a semantic one, because
 our hyper-triples require semantic hyper-assertions. Similarly, we use \<^const>\<open>interp_pexp\<close> to convert
 a syntactic program expression into a semantic one.
 \<^term>\<open>transform_assign x e P\<close> and \<^term>\<open>transform_havoc x P\<close> correspond to A^e_x and H_x from definition 10.\<close>
 
-text \<open>Rule AssignS from figure 4\<close>
+text \<open>Rule AssignS from figure 3\<close>
 proposition AssignS:
-  "\<Turnstile> { interp_assert (transform_assign x e P) } Assign x (interp_pexp e) {interp_assert P}"
-  using rule_assign_syntactic by auto
+  "\<turnstile> { interp_assert (transform_assign x e P) } Assign x (interp_pexp e) {interp_assert P}"
+  using completeness rule_assign_syntactic by blast
 
-text \<open>Rule HavocS from figure 4\<close>
+text \<open>Rule HavocS from figure 3\<close>
 proposition HavocS:
-  "\<Turnstile> { interp_assert (transform_havoc x P) } Havoc x {interp_assert P}"
-  using rule_havoc_syntactic by auto
+  "\<turnstile> { interp_assert (transform_havoc x P) } Havoc x {interp_assert P}"
+  using completeness rule_havoc_syntactic by blast
 
 subsection \<open>4.3: Syntactic Rules for Assume Statements\<close>
 
 text \<open>\<^const>\<open>transform_assume\<close> corresponds to \<Pi>_p (definition 11).\<close>
 
-text \<open>Rule AssumeS from figure 4\<close>
+text \<open>Rule AssumeS from figure 3\<close>
 proposition AssumeS:
-  "\<Turnstile> { interp_assert (transform_assume (pbexp_to_assertion 0 b) P) } Assume (interp_pbexp b) {interp_assert P}"
-  using rule_assume_syntactic by auto
+  "\<turnstile> { interp_assert (transform_assume (pbexp_to_assertion 0 b) P) } Assume (interp_pbexp b) {interp_assert P}"
+  using completeness rule_assume_syntactic by blast
 
 text \<open>As before, we use \<^const>\<open>interp_pbexp\<close> to convert the syntactic program Boolean expression b into
 a semantic one. Similarly, \<^term>\<open>pbexp_to_assertion 0 b\<close> converts the syntactic program Boolean expression
@@ -127,30 +136,32 @@ quantified state. For example, the hyper-assertion \<open>\<forall><\<phi>>. \<p
 be written as \<open>\<forall>. 0(a)=0(b) \<and> (\<exists>. 1(x) \<succeq> 0(y))\<close> with de Bruijn indices. Thus, one can think of
 \<open>pbexp_to_assertion 0 b\<close> as \<open>b(\<phi>)\<close>, where \<open>\<phi>\<close> is simply the innermost quantified state.\<close>
 
+
+
+
 section \<open>5: Proof Principles for Loops\<close>
 
-text \<open>We show in the following our proof rules for loops, presented in figure 6.\<close>
+text \<open>We show in the following our proof rules for loops, presented in figure 5.\<close>
 
-text \<open>Rule WhileDesugared from figure 6\<close>
+text \<open>Rule WhileDesugared from figure 5\<close>
 theorem while_desugared:
-  assumes "\<And>n. \<Turnstile> {I n} Assume b;; C {I (Suc n)}"
-      and "\<Turnstile> { natural_partition I } Assume (lnot b) { Q }"
-    shows "\<Turnstile> {I 0} while_cond b C { Q }"
-  by (metis assms(1) assms(2) seq_rule while_cond_def while_rule)
+  assumes "\<And>n. \<turnstile> {I n} Assume b;; C {I (Suc n)}"
+      and "\<turnstile> { natural_partition I } Assume (lnot b) { Q }"
+    shows "\<turnstile> {I 0} while_cond b C { Q }"
+  by (metis completeness soundness assms(1) assms(2) seq_rule while_cond_def while_rule)
 
 text \<open>This result uses the following constructs:
 \<^item> \<^term>\<open>natural_partition I\<close> corresponds to the \<Otimes> operator from definition 7.
 \<^item> \<^term>\<open>lnot b\<close> negates b.
 \<^item> \<^term>\<open>while_cond b C\<close> is defined as \<^term>\<open>While (Assume b;; C);; Assume (lnot b)\<close>.\<close>
 
-text \<open>Rule WhileSync from figure 6 (presented in subsection 5.1)\<close>
+text \<open>Rule WhileSync from figure 5 (presented in subsection 5.1)\<close>
 lemma WhileSync:
   assumes "entails I (low_exp b)"
-      and "\<Turnstile> {conj I (holds_forall b)} C {I}"
-    shows "\<Turnstile> {conj I (low_exp b)} while_cond b C {conj (disj I emp) (holds_forall (lnot b))}"
-  apply (rule WhileSync_simpler)
-  using consequence_rule[of "conj I (holds_forall b)" "conj I (holds_forall b)" I "conj I (low_exp b)"]
-  using entail_conj assms(1) assms(2) entails_refl by blast
+      and "\<turnstile> {conj I (holds_forall b)} C {I}"
+    shows "\<turnstile> {conj I (low_exp b)} while_cond b C {conj (disj I emp) (holds_forall (lnot b))}"
+  using WhileSync_simpler entail_conj completeness soundness assms(1) assms(2) entails_refl 
+  consequence_rule[of "conj I (holds_forall b)" "conj I (holds_forall b)" I "conj I (low_exp b)"] by blast
 
 text \<open>This result uses the following constructs:
 \<^item> \<^term>\<open>conj A B\<close> corresponds to the hyper-assertion \<open>A \<and> B\<close>.
@@ -159,52 +170,55 @@ text \<open>This result uses the following constructs:
 \<^item> \<^term>\<open>disj A B\<close> corresponds to the hyper-assertion \<open>A \<or> B\<close>.
 \<^item> \<^term>\<open>emp\<close> checks whether the set of states is empty.\<close>
 
-text \<open>Rule IfSync from figure 6 (presented in subsection 5.1)\<close>
+text \<open>Rule IfSync from figure 5 (presented in subsection 5.1)\<close>
 theorem IfSync:
   assumes "entails P (low_exp b)"
-      and "\<Turnstile> {conj P (holds_forall b)} C1 {Q}"
-      and "\<Turnstile> {conj P (holds_forall (lnot b))} C2 {Q}"
-    shows "\<Turnstile> {P} if_then_else b C1 C2 {Q}"
-  apply (rule consequence_rule[of _ "conj P (low_exp b)" Q])
-  using assms(1) entail_conj apply blast
-  apply (simp add: entails_refl)
-  by (simp add: assms(2) assms(3) if_synchronized)
+      and "\<turnstile> {conj P (holds_forall b)} C1 {Q}"
+      and "\<turnstile> {conj P (holds_forall (lnot b))} C2 {Q}"
+    shows "\<turnstile> {P} if_then_else b C1 C2 {Q}"
+  using completeness soundness consequence_rule[of _ "conj P (low_exp b)" Q] assms(1) entail_conj entails_refl assms if_synchronized by metis
 
 text \<open>This result uses the following construct:
 \<^item> \<^term>\<open>if_then_else b C1 C2\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C1) (Assume (lnot b);; C2)\<close>.\<close>
 
-text \<open>Rule While-\<forall>*\<exists>* from figure 6 (presented in subsection 5.2)\<close>
+text \<open>Rule While-\<forall>*\<exists>* from figure 5 (presented in subsection 5.2)\<close>
 theorem while_forall_exists:
-  assumes "\<Turnstile> {I} if_then b C {I}"
-      and "\<Turnstile> {I} Assume (lnot b) {interp_assert Q}"
+  assumes "\<turnstile> {I} if_then b C {I}"
+      and "\<turnstile> {I} Assume (lnot b) {interp_assert Q}"
       and "no_forall_state_after_existential Q"
-    shows "\<Turnstile> {I} while_cond b C {interp_assert Q}"
+    shows "\<turnstile> {I} while_cond b C {interp_assert Q}"
   using consequence_rule[of I I "conj (interp_assert Q) (holds_forall (lnot b))" "interp_assert Q"]
-  using while_forall_exists_simpler assms entail_conj_weaken entails_refl by blast
+  using completeness soundness while_forall_exists_simpler assms entail_conj_weaken entails_refl by metis
 
 text \<open>This result uses the following constructs:
 \<^item> \<^term>\<open>if_then b C\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C) (Assume (lnot b))\<close>.
 \<^item> \<^term>\<open>no_forall_state_after_existential Q\<close> holds iff there is no universal state quantifier \<forall>\<langle>_\<rangle> after any \<exists> in Q.\<close>
 
-text \<open>Rule While-\<exists> from figure 6 (presented in subsection 5.3)\<close>
+text \<open>Rule While-\<exists> from figure 5 (presented in subsection 5.3)\<close>
 theorem while_loop_exists:
-  assumes  "\<And>v. \<Turnstile> { (\<lambda>S. \<exists>\<phi>\<in>S. e (snd \<phi>) = v \<and> b (snd \<phi>) \<and> P \<phi> S) } if_then b C { (\<lambda>S. \<exists>\<phi>\<in>S. lt (e (snd \<phi>)) v \<and> P \<phi> S) }"
-      and "\<And>\<phi>. \<Turnstile> { P \<phi> } while_cond b C { Q \<phi> }"
+  assumes  "\<And>v. \<turnstile> { (\<lambda>S. \<exists>\<phi>\<in>S. e (snd \<phi>) = v \<and> b (snd \<phi>) \<and> P \<phi> S) } if_then b C { (\<lambda>S. \<exists>\<phi>\<in>S. lt (e (snd \<phi>)) v \<and> P \<phi> S) }"
+      and "\<And>\<phi>. \<turnstile> { P \<phi> } while_cond b C { Q \<phi> }"
       and "wfP lt"
-    shows "\<Turnstile> { (\<lambda>S. \<exists>\<phi>\<in>S. P \<phi> S) } while_cond b C { (\<lambda>S. \<exists>\<phi>\<in>S. Q \<phi> S)}"
-  using exists_terminates_loop assms by blast
+    shows "\<turnstile> { (\<lambda>S. \<exists>\<phi>\<in>S. P \<phi> S) } while_cond b C { (\<lambda>S. \<exists>\<phi>\<in>S. Q \<phi> S)}"
+  using completeness soundness exists_terminates_loop assms by blast
 
 text \<open>\<^term>\<open>wfP lt\<close> in this result ensures that the binary operator \<open>lt\<close> is well-founded.
 \<open>e\<close> is a function of a program state, which must decrease after each iteration.\<close>
 
+
+
+
 section \<open>Appendix A: Technical Definitions Omitted from the Paper\<close>
 
-text \<open>The following definitions are formalized in the file SyntacticAssertions.thy:
+text \<open>The big-step semantics (figure 9) is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.
+The following definitions are formalized in the file SyntacticAssertions.thy:
 \<^item> Evaluation of hyper-expressions (definition 12): \<^const>\<open>interp_exp\<close>.
 \<^item> Satisfiability of hyper-assertions (definition 12): \<^const>\<open>sat_assertion\<close>.
 \<^item> Syntactic transformation for deterministic assignments (definition 13): \<^const>\<open>transform_assign\<close>.
 \<^item> Syntactic transformation for non-deterministic assignments (definition 14): \<^const>\<open>transform_havoc\<close>.
 \<^item> Syntactic transformation for assume statements. (definition 15): \<^const>\<open>transform_assume\<close>.\<close>
+
+
 
 section \<open>Appendix C: Expressing Judgments of Hoare Logics as Hyper-Triples\<close>
 
@@ -343,8 +357,7 @@ proof -
   then show ?thesis using rewrite_if_commute by blast
 qed
 
-text \<open>Remark: While preparing this artifact, we noticed a discrepancy between the precondition shown
-here (\<^term>\<open>card S = 1\<close>) and the one presented in the paper (\<open>\<top>\<close>). We will correct this in our revision.\<close>
+
 
 
 section \<open>Appendix D: Compositionality\<close>
@@ -354,100 +367,100 @@ subsection \<open>Appendix D.1: Compositionality Rules\<close>
 text \<open>In the following, we show the rules from figure 11, in the order in which they appear.\<close>
 
 proposition rule_Linking:
-  assumes "\<And>\<phi>1 (\<phi>2 :: ('a, 'b, 'c, 'd) state). fst \<phi>1 = fst \<phi>2 \<and> ( \<Turnstile> { (in_set \<phi>1 :: (('a, 'b, 'c, 'd) state) hyperassertion) } C { in_set \<phi>2 } )
-  \<Longrightarrow> ( \<Turnstile> { (P \<phi>1 :: (('a, 'b, 'c, 'd) state) hyperassertion) } C { Q \<phi>2 } )"
-  shows "\<Turnstile> { ((\<lambda>S. \<forall>\<phi>1 \<in> S. P \<phi>1 S) :: (('a, 'b, 'c, 'd) state) hyperassertion) } C { (\<lambda>S. \<forall>\<phi>2 \<in> S. Q \<phi>2 S) }"
-  using assms by (rule rule_linking)
+  assumes "\<And>\<phi>1 (\<phi>2 :: ('a, 'b, 'c, 'd) state). fst \<phi>1 = fst \<phi>2 \<and> ( \<turnstile> { (in_set \<phi>1 :: (('a, 'b, 'c, 'd) state) hyperassertion) } C { in_set \<phi>2 } )
+  \<Longrightarrow> ( \<turnstile> { (P \<phi>1 :: (('a, 'b, 'c, 'd) state) hyperassertion) } C { Q \<phi>2 } )"
+  shows "\<turnstile> { ((\<lambda>S. \<forall>\<phi>1 \<in> S. P \<phi>1 S) :: (('a, 'b, 'c, 'd) state) hyperassertion) } C { (\<lambda>S. \<forall>\<phi>2 \<in> S. Q \<phi>2 S) }"
+  using assms soundness completeness rule_linking by blast
 
 proposition rule_And:
-  assumes "\<Turnstile> {P} C {Q}"
-      and "\<Turnstile> {P'} C {Q'}"
-    shows "\<Turnstile> {conj P P'} C {conj Q Q'}"
-  using assms by (rule rule_And)
+  assumes "\<turnstile> {P} C {Q}"
+      and "\<turnstile> {P'} C {Q'}"
+    shows "\<turnstile> {conj P P'} C {conj Q Q'}"
+  using assms soundness completeness rule_And by metis
 
 proposition rule_Or:
-  assumes "\<Turnstile> {P} C {Q}"
-      and "\<Turnstile> {P'} C {Q'}"
-    shows "\<Turnstile> {disj P P'} C {disj Q Q'}"
-  using assms by (rule rule_Or)
+  assumes "\<turnstile> {P} C {Q}"
+      and "\<turnstile> {P'} C {Q'}"
+    shows "\<turnstile> {disj P P'} C {disj Q Q'}"
+  using assms soundness completeness rule_Or by metis
 
 proposition rule_FrameSafe:
   assumes "wr C \<inter> fv F = {}"
       and "wf_assertion F"
       and "no_exists_state F"
-    shows "\<Turnstile> {interp_assert F} C {interp_assert F}"
-  using safe_frame_rule_syntactic assms by auto
+    shows "\<turnstile> {interp_assert F} C {interp_assert F}"
+  using safe_frame_rule_syntactic assms completeness by metis
 
 proposition rule_Forall:
-  assumes "\<And>x. \<Turnstile> {P x} C {Q x}"
-  shows "\<Turnstile> {forall P} C {forall Q}"
-  using assms by (rule rule_Forall)
+  assumes "\<And>x. \<turnstile> {P x} C {Q x}"
+  shows "\<turnstile> {forall P} C {forall Q}"
+  using assms soundness completeness rule_Forall by metis
 
 proposition rule_IndexedUnion:
-  assumes "\<And>x. \<Turnstile> {P x} C {Q x}"
-  shows "\<Turnstile> {general_join P} C {general_join Q}"
-  using assms by (rule rule_IndexedUnion)
+  assumes "\<And>x. \<turnstile> {P x} C {Q x}"
+  shows "\<turnstile> {general_join P} C {general_join Q}"
+  using assms soundness completeness rule_IndexedUnion by metis
 
 proposition rule_Union:
-  assumes "\<Turnstile> {P} C {Q}"
-      and "\<Turnstile> {P'} C {Q'}"
-    shows "\<Turnstile> {join P P'} C {join Q Q'}"
-  using assms by (rule rule_Union)
+  assumes "\<turnstile> {P} C {Q}"
+      and "\<turnstile> {P'} C {Q'}"
+    shows "\<turnstile> {join P P'} C {join Q Q'}"
+  using assms soundness completeness rule_Union by metis
 
 proposition rule_BigUnion:
   fixes P :: "((('a \<Rightarrow> 'b) \<times> ('c \<Rightarrow> 'd)) set \<Rightarrow> bool)"
-  assumes "\<Turnstile> {P} C {Q}"
-  shows "\<Turnstile> {general_union P} C {general_union Q}"
-  using assms by (rule rule_BigUnion)
+  assumes "\<turnstile>  {P} C {Q}"
+  shows "\<turnstile> {general_union P} C {general_union Q}"
+  using assms soundness completeness rule_BigUnion by blast
 
 proposition rule_Specialize:
-  assumes "\<Turnstile> {interp_assert P} C {interp_assert Q}"
+  assumes "\<turnstile> {interp_assert P} C {interp_assert Q}"
       and "indep_of_set b"
       and "wf_assertion_aux 0 1 b"
       and "wr C \<inter> fv b = {}"
-    shows "\<Turnstile> { interp_assert (transform_assume b P) } C { interp_assert (transform_assume b Q) }"
-  using filter_rule_syntactic assms by blast
+    shows "\<turnstile> { interp_assert (transform_assume b P) } C { interp_assert (transform_assume b Q) }"
+  using filter_rule_syntactic assms soundness completeness by blast
 
 text \<open>In the following, \<^term>\<open>entails_with_updates vars P P'\<close> and \<^term>\<open>invariant_on_updates vars Q\<close>
 respectively correspond to the notions of entailments modulo logical variables and invariance with
 respect to logical updates, as described in definition 23.\<close>
 
 proposition rule_LUpdate:
-  assumes "\<Turnstile> {P'} C {Q}"
+  assumes "\<turnstile> {P'} C {Q}"
       and "entails_with_updates vars P P'"
       and "invariant_on_updates vars Q"
-    shows "\<Turnstile> {P} C {Q}"
-  using assms by (rule rule_LUpdate)
+    shows "\<turnstile> {P} C {Q}"
+  using assms soundness completeness rule_LUpdate by blast
 
 proposition rule_LUpdateSyntactic:
-  assumes "\<Turnstile> { (\<lambda>S. P S \<and> e_recorded_in_t e t S) } C { Q }"
+  assumes "\<turnstile> { (\<lambda>S. P S \<and> e_recorded_in_t e t S) } C { Q }"
       and "not_fv_hyper t P"
       and "not_fv_hyper t Q"
-    shows "\<Turnstile> { P } C { Q }"
-  using LUpdateS assms by fast
+    shows "\<turnstile> { P } C { Q }"
+  using LUpdateS soundness completeness assms by fast
 
 proposition rule_AtMost:
-  assumes "\<Turnstile> {P} C {Q}"
-  shows "\<Turnstile> {has_superset P} C {has_superset Q}"
-  using assms by (rule rule_AtMost)
+  assumes "\<turnstile> {P} C {Q}"
+  shows "\<turnstile> {has_superset P} C {has_superset Q}"
+  using assms soundness completeness rule_AtMost by blast
 
 (* derived from join *)
 proposition rule_AtLeast:
-  assumes "\<Turnstile> {P} C {Q}"
-  shows "\<Turnstile> {has_subset P} C {has_subset Q}"
-  using assms by (rule rule_AtLeast)
+  assumes "\<turnstile> {P} C {Q}"
+  shows "\<turnstile> {has_subset P} C {has_subset Q}"
+  using assms soundness completeness rule_AtLeast by blast
 
 proposition rule_True:
-  "\<Turnstile> {P} C {\<lambda>_. True}"
-  by (rule rule_True)
+  "\<turnstile> {P} C {\<lambda>_. True}"
+  using rule_True completeness by blast
 
 proposition rule_False:
-  "\<Turnstile> { (\<lambda>_. False) } C {Q}"
-  by (rule rule_False)
+  "\<turnstile> { (\<lambda>_. False) } C {Q}"
+  using rule_False completeness by blast
 
 proposition rule_Empty:
-  "\<Turnstile> { (\<lambda>S. S = {}) } C { (\<lambda>S. S = {}) }"
-  by (rule rule_Empty)
+  "\<turnstile> { (\<lambda>S. S = {}) } C { (\<lambda>S. S = {}) }"
+  using completeness rule_Empty by blast
 
 
 subsection \<open>Appendix D.2: Examples\<close>
@@ -459,45 +472,49 @@ proposition fig_12_composing_monotonicity_and_minimum:
   fixes x y :: 'c
   fixes leq :: "'d \<Rightarrow> 'd \<Rightarrow> bool"
   fixes one two :: 'b
-  assumes "\<Turnstile> { P } C1 { has_minimum x leq }"
-      and "\<Turnstile> { is_monotonic i x one two leq } C2 { is_monotonic i y one two leq }"
-      and "\<Turnstile> { (is_singleton :: ((('a \<Rightarrow> 'b) \<times> ('c \<Rightarrow> 'd)) set \<Rightarrow> bool)) } C2 { is_singleton }"
+  assumes "\<turnstile> { P } C1 { has_minimum x leq }"
+      and "\<turnstile> { is_monotonic i x one two leq } C2 { is_monotonic i y one two leq }"
+      and "\<turnstile> { (is_singleton :: ((('a \<Rightarrow> 'b) \<times> ('c \<Rightarrow> 'd)) set \<Rightarrow> bool)) } C2 { is_singleton }"
       and "one \<noteq> two" \<comment>\<open>We use distinct logical values \<open>one\<close> and \<open>two\<close> to represent 1 and 2.\<close>
       and "\<And>x. leq x x" \<comment>\<open>We assume that \<open>leq\<close> is a partial order, and thus that it satisfies reflexivity.\<close>
-    shows "\<Turnstile> { P } C1 ;; C2 { has_minimum y leq }"
-  using assms by (rule composing_monotonicity_and_minimum)
+    shows "\<turnstile> { P } C1 ;; C2 { has_minimum y leq }"
+  using assms soundness completeness composing_monotonicity_and_minimum by metis
 
 text \<open>Example shown in figure 13. To see the actual proof, ctrl+click on @{thm composing_GNI_with_SNI}.\<close>
 proposition fig_13_composing_GNI_with_SNI:
   fixes h :: 'lvar
   fixes l :: 'pvar
-  assumes "\<Turnstile> { (low l :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C2 { low l }"
-      and "\<Turnstile> { (not_empty :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C2 { not_empty }"
-      and "\<Turnstile> { (low l :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C1 { lGNI l h }"
-    shows "\<Turnstile> { (low l :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C1;; C2 { lGNI l h }"
-  using assms by (rule composing_GNI_with_SNI)
+  assumes "\<turnstile> { (low l :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C2 { low l }"
+      and "\<turnstile> { (not_empty :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C2 { not_empty }"
+      and "\<turnstile> { (low l :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C1 { lGNI l h }"
+    shows "\<turnstile> { (low l :: (('lvar, 'lval, 'pvar, 'pval) state) hyperassertion) } C1;; C2 { lGNI l h }"
+  using assms soundness completeness composing_GNI_with_SNI by metis
+
 
 
 
 
 section \<open>Appendix E: Termination-Based Reasoning\<close>
 
-text \<open>Total hyper-triples (definition 24) are defined as \<^const>\<open>total_hyper_triple\<close>, and usually
-written \<^term>\<open>\<Turnstile>TOT {P} C {Q}\<close>.\<close>
+text \<open>Terminating hyper-triples (definition 24) are defined as \<^const>\<open>total_hyper_triple\<close>, and usually
+written \<^term>\<open>\<Turnstile>TERM {P} C {Q}\<close>.\<close>
 
 theorem rule_Frame:
-  assumes "\<Turnstile>TOT {P} C {Q}"
+  assumes "\<Turnstile>TERM {P} C {Q}"
       and "wr C \<inter> fv F = {}"
       and "wf_assertion F"
-    shows "\<Turnstile>TOT {conj P (interp_assert F)} C {conj Q (interp_assert F)}"
+    shows "\<Turnstile>TERM {conj P (interp_assert F)} C {conj Q (interp_assert F)}"
   by (simp add: assms(1) assms(2) assms(3) frame_rule_syntactic)
 
-theorem rule_WhileSyncTot:
-  assumes "\<Turnstile>TOT {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
+theorem rule_WhileSyncTerm:
+  assumes "\<Turnstile>TERM {conj I (\<lambda>S. \<forall>\<phi>\<in>S. b (snd \<phi>) \<and> fst \<phi> t = e (snd \<phi>))} C {conj (conj I (low_exp b)) (e_smaller_than_t e t lt)}"
       and "wfP lt"
       and "not_fv_hyper t I"
-    shows "\<Turnstile>TOT {conj I (low_exp b)} while_cond b C {conj I (holds_forall (lnot b))}"
+    shows "\<Turnstile>TERM {conj I (low_exp b)} while_cond b C {conj I (holds_forall (lnot b))}"
   by (meson WhileSyncTot assms(1) assms(2) assms(3))
+
+
+
 
 section \<open>Appendix H: Synchronous Reasoning over Different Branches\<close>
 
@@ -515,5 +532,7 @@ proposition prop_14_synchronized_if_rule:
       and "not_free_var_hyper x R2"
     shows "\<Turnstile> {P} If (Seq C1 (Seq C C1')) (Seq C2 (Seq C C2')) {join Q1 Q2}"
   using if_sync_rule assms by meson
+
+
 
 end

@@ -1126,7 +1126,7 @@ lemma RFUE:
 definition encode_RFU where
   "encode_RFU from_nat x P S \<longleftrightarrow> (\<exists>states \<in> P. (\<forall>i. states i \<in> S \<and> fst (states i) x = from_nat i))"
 
-paragraph \<open>Proposition 10\<close>
+paragraph \<open>Proposition 11\<close>
 theorem encode_RFU:
   assumes "not_free_var_of P x"
       and "not_free_var_of Q x"

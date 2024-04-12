@@ -3,10 +3,10 @@ section \<open>Hyper Hoare Logic\<close>
 text \<open>This file contains technical results from sections 3 and 5:
 - Hyper-assertions (definition 3)
 - Hyper-triples (definition 5)
-- Core rules of Hyper Hoare Logic (figure 3)
+- Core rules of Hyper Hoare Logic (figure 2)
 - Soundness of the core rules (theorem 1)
 - Completeness of the core rules (theorem 2)
-- Ability to disprove hyper-triples (theorem 4)\<close>
+- Ability to disprove hyper-triples (theorem 5)\<close>
 
 theory Logic
   imports Language
@@ -193,7 +193,7 @@ lemma natural_partitionE:
 
 subsection \<open>Rules of the Logic\<close>
 
-text \<open>Core rules from figure 3\<close>
+text \<open>Core rules from figure 2\<close>
 
 inductive syntactic_HHT ::
  "(('lvar, 'lval, 'pvar, 'pval) state hyperassertion) \<Rightarrow> ('pvar, 'pval) stmt \<Rightarrow> (('lvar, 'lval, 'pvar, 'pval) state hyperassertion) \<Rightarrow> bool"
@@ -687,7 +687,7 @@ subsection \<open>Disproving Hyper-Triples\<close>
 
 definition sat where "sat P \<longleftrightarrow> (\<exists>S. P S)"
 
-text \<open>Theorem 4\<close>
+text \<open>Theorem 5\<close>
 
 theorem disproving_triple:
   "\<not> \<Turnstile> {P} C {Q} \<longleftrightarrow> (\<exists>P'. sat P' \<and> entails P' P \<and> \<Turnstile> {P'} C {\<lambda>S. \<not> Q S})" (is "?A \<longleftrightarrow> ?B")

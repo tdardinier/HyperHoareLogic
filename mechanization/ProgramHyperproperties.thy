@@ -1,6 +1,6 @@
 section \<open>Expressivity of Hyper Hoare Logic\<close>
 
-text \<open>In this file, we define program hyperproperties (definition 8), and prove theorem 3.\<close>
+text \<open>In this file, we define program hyperproperties (definition 8), and prove theorems 3 and 4.\<close>
 
 subsection \<open>Program Hyperproperties\<close>
 
@@ -312,7 +312,7 @@ definition semify where
 definition hyperprop_hht where
   "hyperprop_hht P Q \<Sigma> \<longleftrightarrow> (\<forall>S. P S \<longrightarrow> Q (semify \<Sigma> S))"
 
-text \<open>Footnote 10\<close>
+text \<open>Theorem 4\<close>
 theorem any_hht_hyperprop:
   "\<Turnstile> {P} C {Q} \<longleftrightarrow> hypersat C (hyperprop_hht P Q)" (is "?A \<longleftrightarrow> ?B")
 proof
