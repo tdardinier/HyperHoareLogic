@@ -411,7 +411,7 @@ proposition rule_True:
   by (simp add: hyper_hoare_triple_def)
 
 
-(* Other direction does not hold! *)
+(* Other direction does not hold. *)
 lemma sem_inter:
   "sem C (S1 \<inter> S2) \<subseteq> sem C S1 \<inter> sem C S2"
   by (simp add: sem_monotonic)
@@ -625,7 +625,6 @@ proof (rule consequence_rule)
   proof (rule rule_Or)
     show "\<Turnstile> {(\<lambda>S. S = {})} C {\<lambda>S. S = {}}"
       by (metis (mono_tags, lifting) empty_iff equals0I hyper_hoare_triple_def in_sem)
-        (* TODO: Prove this rule *)
     show "\<Turnstile> {general_join PP} C {general_join QQ}"
     proof (rule rule_IndexedUnion)
       fix x show "\<Turnstile> {PP x} C {QQ x}"
