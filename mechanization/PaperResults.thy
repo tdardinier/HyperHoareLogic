@@ -2,6 +2,8 @@ theory PaperResults
   imports Loops SyntacticAssertions Compositionality TotalLogic ExamplesCompositionality
 begin
 
+section \<open>Summary of the Results from the Paper\<close>
+
 text \<open>This file contains the formal results mentioned the paper. It is organized in the same order
 and with the same structure as the paper.
 \<^item> You can use the panel "Sidekick" on the right to see and navigate the structure of the file, via sections and subsections.
@@ -10,10 +12,9 @@ and with the same structure as the paper.
   green left arrow, on the right side of the menu above.\<close>
 
 
+subsection \<open>3: Hyper Hoare Logic\<close>
 
-section \<open>3: Hyper Hoare Logic\<close>
-
-subsection \<open>3.1: Language and Semantics\<close>
+subsubsection \<open>3.1: Language and Semantics\<close>
 
 text \<open>The programming language is defined in the file Language.thy:
 \<^item> The type of program state (definition 1) is \<^typ>\<open>('pvar, 'pval) pstate\<close>
@@ -21,7 +22,7 @@ text \<open>The programming language is defined in the file Language.thy:
 \<^item> Program commands (definition 1) are defined via the type \<^typ>\<open>('var, 'val) stmt\<close>.
 \<^item> The big-step semantics (figure 9) is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.\<close>
 
-subsection \<open>3.2: Hyper-Triples, Formally\<close>
+subsubsection \<open>3.2: Hyper-Triples, Formally\<close>
 
 text \<open>
 \<^item> Extended states (definition 2) are defined as \<^typ>\<open>('lvar, 'lval, 'pvar, 'pval) state\<close> (file Language.thy).
@@ -41,13 +42,13 @@ lemma lemma1:
   "sem (While C) S = (\<Union>n. iterate_sem n C S)"
   using sem_if sem_seq sem_union sem_skip sem_union_general sem_monotonic sem_while by metis+
 
-subsection \<open>3.3: Core Rules\<close>
+subsubsection \<open>3.3: Core Rules\<close>
 
 text \<open>The core rules (from figure 2) are defined in the file Logic.thy as \<^const>\<open>syntactic_HHT\<close>.
-We also use the notation \<^term>\<open>\<turnstile> {P} C {Q}\<close>. Operators \<otimes> (definition 6) and \<Otimes> (definition 7)
+We also use the notation \<^term>\<open>\<turnstile> {P} C {Q}\<close>. Operators \<open>\<otimes>\<close> (definition 6) and \<open>\<Otimes>\<close> (definition 7)
 are defined as \<^const>\<open>join\<close> and \<^const>\<open>natural_partition\<close>, respectively.\<close>
 
-subsection \<open>3.4: Soundness and Completeness\<close>
+subsubsection \<open>3.4: Soundness and Completeness\<close>
 
 text \<open>Theorem 1: Soundness\<close>
 theorem thm1_soundness:
@@ -61,7 +62,7 @@ theorem thm2_completeness:
   shows "\<turnstile> {P} C {Q}"
   using assms completeness by auto
 
-subsection \<open>3.5: Expressivity of Hyper-Triples\<close>
+subsubsection \<open>3.5: Expressivity of Hyper-Triples\<close>
 
 text \<open>Program hyperproperties (definition 8) are defined in the file ProgramHyperproperties as
 the type \<^typ>\<open>('pvar, 'pval) program_hyperproperty\<close>, which is syntactic sugar for the type
@@ -93,22 +94,22 @@ theorem thm5_disproving_triples:
 
 
 
-section \<open>4: Syntactic Rules\<close>
+subsection \<open>4: Syntactic Rules\<close>
 
-subsection \<open>4.1: Syntactic Hyper-Assertions\<close>
+subsubsection \<open>4.1: Syntactic Hyper-Assertions\<close>
 
 text \<open>Syntactic hyper-expressions and hyper-assertions (definition 9) are defined in the file
 SyntacticAssertions.thy as \<^typ>\<open>'val exp\<close> and \<^typ>\<open>'val assertion\<close> respectively, where 'val is the
 type of both logical and program values. Note that we use de Bruijn indices (i.e, natural numbers)
 for states and variables bound by quantifiers.\<close>
 
-subsection \<open>4.2: Syntactic Rules for Deterministic and Non-Deterministic Assignments.\<close>
+subsubsection \<open>4.2: Syntactic Rules for Deterministic and Non-Deterministic Assignments.\<close>
 
-text \<open>We prove semantic versions of the syntactic rules from section 4 (figure 3).
+text \<open>We prove semantic versions of the syntactic rules from subsection 4 (figure 3).
 We use \<^const>\<open>interp_assert\<close> to convert a syntactic hyper-assertion into a semantic one, because
 our hyper-triples require semantic hyper-assertions. Similarly, we use \<^const>\<open>interp_pexp\<close> to convert
 a syntactic program expression into a semantic one.
-\<^term>\<open>transform_assign x e P\<close> and \<^term>\<open>transform_havoc x P\<close> correspond to A^e_x and H_x from definition 10.\<close>
+\<^term>\<open>transform_assign x e P\<close> and \<^term>\<open>transform_havoc x P\<close> correspond to \<open>A\<^sup>e\<^sub>x\<close> and \<open>H\<^sub>x\<close> from definition 10.\<close>
 
 text \<open>Rule AssignS from figure 3\<close>
 proposition AssignS:
@@ -120,9 +121,9 @@ proposition HavocS:
   "\<turnstile> { interp_assert (transform_havoc x P) } Havoc x {interp_assert P}"
   using completeness rule_havoc_syntactic by blast
 
-subsection \<open>4.3: Syntactic Rules for Assume Statements\<close>
+subsubsection \<open>4.3: Syntactic Rules for Assume Statements\<close>
 
-text \<open>\<^const>\<open>transform_assume\<close> corresponds to \<Pi>_p (definition 11).\<close>
+text \<open>\<^const>\<open>transform_assume\<close> corresponds to \<open>\<Pi>\<^sub>b\<close> (definition 11).\<close>
 
 text \<open>Rule AssumeS from figure 3\<close>
 proposition AssumeS:
@@ -139,7 +140,7 @@ be written as \<open>\<forall>. 0(a)=0(b) \<and> (\<exists>. 1(x) \<succeq> 0(y)
 
 
 
-section \<open>5: Proof Principles for Loops\<close>
+subsection \<open>5: Proof Principles for Loops\<close>
 
 text \<open>We show in the following our proof rules for loops, presented in figure 5.\<close>
 
@@ -151,11 +152,11 @@ theorem while_desugared:
   by (metis completeness soundness assms(1) assms(2) seq_rule while_cond_def while_rule)
 
 text \<open>This result uses the following constructs:
-\<^item> \<^term>\<open>natural_partition I\<close> corresponds to the \<Otimes> operator from definition 7.
+\<^item> \<^term>\<open>natural_partition I\<close> corresponds to the \<open>\<Otimes>\<close> operator from definition 7.
 \<^item> \<^term>\<open>lnot b\<close> negates b.
 \<^item> \<^term>\<open>while_cond b C\<close> is defined as \<^term>\<open>While (Assume b;; C);; Assume (lnot b)\<close>.\<close>
 
-text \<open>Rule WhileSync from figure 5 (presented in subsection 5.1)\<close>
+text \<open>Rule WhileSync from figure 5 (presented in subsubsection 5.1)\<close>
 lemma WhileSync:
   assumes "entails I (low_exp b)"
       and "\<turnstile> {conj I (holds_forall b)} C {I}"
@@ -165,12 +166,12 @@ lemma WhileSync:
 
 text \<open>This result uses the following constructs:
 \<^item> \<^term>\<open>conj A B\<close> corresponds to the hyper-assertion \<open>A \<and> B\<close>.
-\<^item> \<^term>\<open>holds_forall b\<close> corresponds to \<open>\<box>b\<close>.
+\<^item> \<^term>\<open>holds_forall b\<close> corresponds to \<open>box(b)\<close>.
 \<^item> \<^term>\<open>low_exp b\<close> corresponds to \<open>low(b)\<close>.
 \<^item> \<^term>\<open>disj A B\<close> corresponds to the hyper-assertion \<open>A \<or> B\<close>.
 \<^item> \<^term>\<open>emp\<close> checks whether the set of states is empty.\<close>
 
-text \<open>Rule IfSync from figure 5 (presented in subsection 5.1)\<close>
+text \<open>Rule IfSync from figure 5 (presented in subsubsection 5.1)\<close>
 theorem IfSync:
   assumes "entails P (low_exp b)"
       and "\<turnstile> {conj P (holds_forall b)} C1 {Q}"
@@ -181,7 +182,7 @@ theorem IfSync:
 text \<open>This result uses the following construct:
 \<^item> \<^term>\<open>if_then_else b C1 C2\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C1) (Assume (lnot b);; C2)\<close>.\<close>
 
-text \<open>Rule While-\<forall>*\<exists>* from figure 5 (presented in subsection 5.2)\<close>
+text \<open>Rule \<open>While-\<forall>*\<exists>*\<close> from figure 5 (presented in subsubsection 5.2)\<close>
 theorem while_forall_exists:
   assumes "\<turnstile> {I} if_then b C {I}"
       and "\<turnstile> {I} Assume (lnot b) {interp_assert Q}"
@@ -192,9 +193,9 @@ theorem while_forall_exists:
 
 text \<open>This result uses the following constructs:
 \<^item> \<^term>\<open>if_then b C\<close> is syntactic sugar for \<^term>\<open>If (Assume b;; C) (Assume (lnot b))\<close>.
-\<^item> \<^term>\<open>no_forall_state_after_existential Q\<close> holds iff there is no universal state quantifier \<forall>\<langle>_\<rangle> after any \<exists> in Q.\<close>
+\<^item> \<^term>\<open>no_forall_state_after_existential Q\<close> holds iff there is no universal state quantifier \<open>\<forall>\<langle>_\<rangle>\<close> after any \<open>\<exists>\<close> in Q.\<close>
 
-text \<open>Rule While-\<exists> from figure 5 (presented in subsection 5.3)\<close>
+text \<open>Rule \<open>While-\<exists>\<close> from figure 5 (presented in subsubsection 5.3)\<close>
 theorem while_loop_exists:
   assumes  "\<And>v. \<turnstile> { (\<lambda>S. \<exists>\<phi>\<in>S. e (snd \<phi>) = v \<and> b (snd \<phi>) \<and> P \<phi> S) } if_then b C { (\<lambda>S. \<exists>\<phi>\<in>S. lt (e (snd \<phi>)) v \<and> P \<phi> S) }"
       and "\<And>\<phi>. \<turnstile> { P \<phi> } while_cond b C { Q \<phi> }"
@@ -208,7 +209,7 @@ text \<open>\<^term>\<open>wfP lt\<close> in this result ensures that the binary
 
 
 
-section \<open>Appendix A: Technical Definitions Omitted from the Paper\<close>
+subsection \<open>Appendix A: Technical Definitions Omitted from the Paper\<close>
 
 text \<open>The big-step semantics (figure 9) is defined as \<^const>\<open>single_sem\<close>. We also use the notation \<^term>\<open>\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>'\<close>.
 The following definitions are formalized in the file SyntacticAssertions.thy:
@@ -220,9 +221,9 @@ The following definitions are formalized in the file SyntacticAssertions.thy:
 
 
 
-section \<open>Appendix C: Expressing Judgments of Hoare Logics as Hyper-Triples\<close>
+subsection \<open>Appendix C: Expressing Judgments of Hoare Logics as Hyper-Triples\<close>
 
-subsection \<open>Appendix C.1: Overapproximate Hoare Logics\<close>
+subsubsection \<open>Appendix C.1: Overapproximate Hoare Logics\<close>
 
 text \<open>The following judgments are defined in the file Expressivity.thy as follows:
 \<^item> Definition 16 (Hoare Logic): \<^term>\<open>HL P C Q\<close>.
@@ -256,7 +257,7 @@ Moreover, note that we represent k-tuples implicitly, as mappings of type \<^typ
 \<open>'a\<close> has k elements, a function of type \<^typ>\<open>'a \<Rightarrow> 'b\<close> corresponds to a k-tuple of elements of type 'b.
 This representation is more convenient to work with, and more general, since it also captures infinite sequences.\<close>
 
-subsection \<open>Appendix C.2: Underapproximate Hoare Logics\<close>
+subsubsection \<open>Appendix C.2: Underapproximate Hoare Logics\<close>
 
 text \<open>The following judgments are defined in the file Expressivity.thy as follows:
 \<^item> Definition 18 (Incorrectness Logic): \<^term>\<open>IL P C Q\<close>.
@@ -316,7 +317,7 @@ proposition prop_11_encode_kFU_in_HHL:
   using assms
   by (rule encode_RFU)
 
-subsection \<open>Appendix C.3: Beyond Over- and Underapproximation\<close>
+subsubsection \<open>Appendix C.3: Beyond Over- and Underapproximation\<close>
 
 text \<open>The following judgment is defined in the file Expressivity.thy as follows:
 \<^item> Definition 22 (k-Universal Existential): \<^term>\<open>RUE P C Q\<close>.
@@ -360,9 +361,9 @@ qed
 
 
 
-section \<open>Appendix D: Compositionality\<close>
+subsection \<open>Appendix D: Compositionality\<close>
 
-subsection \<open>Appendix D.1: Compositionality Rules\<close>
+subsubsection \<open>Appendix D.1: Compositionality Rules\<close>
 
 text \<open>In the following, we show the rules from figure 11, in the order in which they appear.\<close>
 
@@ -463,7 +464,7 @@ proposition rule_Empty:
   using completeness rule_Empty by blast
 
 
-subsection \<open>Appendix D.2: Examples\<close>
+subsubsection \<open>Appendix D.2: Examples\<close>
 
 text \<open>Example shown in figure 12. To see the actual proof, ctrl+click on @{thm composing_monotonicity_and_minimum}.\<close>
 proposition fig_12_composing_monotonicity_and_minimum:
@@ -494,7 +495,7 @@ proposition fig_13_composing_GNI_with_SNI:
 
 
 
-section \<open>Appendix E: Termination-Based Reasoning\<close>
+subsection \<open>Appendix E: Termination-Based Reasoning\<close>
 
 text \<open>Terminating hyper-triples (definition 24) are defined as \<^const>\<open>total_hyper_triple\<close>, and usually
 written \<^term>\<open>\<Turnstile>TERM {P} C {Q}\<close>.\<close>
@@ -516,7 +517,7 @@ theorem rule_WhileSyncTerm:
 
 
 
-section \<open>Appendix H: Synchronous Reasoning over Different Branches\<close>
+subsection \<open>Appendix H: Synchronous Reasoning over Different Branches\<close>
 
 text \<open>Proposition 14: Synchronous if rule\<close>
 proposition prop_14_synchronized_if_rule:

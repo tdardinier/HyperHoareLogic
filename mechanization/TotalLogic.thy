@@ -2,6 +2,7 @@ theory TotalLogic
   imports Loops Compositionality SyntacticAssertions
 begin
 
+section \<open>Terminating Hyper-Triples\<close>
 
 definition total_hyper_triple ("\<Turnstile>TERM {_} _ {_}" [51,0,0] 81) where
   "\<Turnstile>TERM {P} C {Q} \<longleftrightarrow> ( \<Turnstile> {P} C {Q} \<and> (\<forall>S. P S \<longrightarrow> (\<forall>\<phi> \<in> S. \<exists>\<sigma>'. single_sem C (snd \<phi>) \<sigma>' )))"
@@ -152,7 +153,7 @@ qed
 
 
 
-section \<open>Specialize rule\<close>
+subsection \<open>Specialize rule\<close>
 
 
 definition same_syn_sem_all :: "'a assertion \<Rightarrow> ((nat, 'a, nat, 'a) state \<Rightarrow> bool) \<Rightarrow> bool"
@@ -603,7 +604,7 @@ proof (rule total_hyper_triple_altI)
 
   have terminates: "\<exists>n. iterate_sem n (Assume b;; C) S = {}"
   proof (rule ccontr)
-    assume asm0: "\<nexists>n. iterate_sem n (Assume b ;; C) S = {}"
+    assume asm0: "\<not> (\<exists>n. iterate_sem n (Assume b ;; C) S = {})"
     
     let ?R = "{(x, y). lt x y}"
     let ?Q = "{ e (snd \<phi>) |\<phi> n. \<phi> \<in> ?S n}"

@@ -55,7 +55,7 @@ inductive_cases single_sem_Assign_elim[elim!]: "\<langle>Assign x e, \<sigma>\<r
 inductive_cases single_sem_Havoc_elim[elim!]: "\<langle>Havoc x, \<sigma>\<rangle> \<rightarrow> \<sigma>'"
 
 
-section \<open>Extended States and Extended Semantics\<close>
+subsection \<open>Extended States and Extended Semantics\<close>
 
 text \<open>Definition 2: Extended states\<close>
 type_synonym ('lvar, 'lval, 'pvar, 'pval) state = "('lvar \<Rightarrow> 'lval) \<times> ('pvar, 'pval) pstate"

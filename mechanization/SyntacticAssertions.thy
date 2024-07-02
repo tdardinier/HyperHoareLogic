@@ -19,25 +19,25 @@ type_synonym 'a comp = "'a \<Rightarrow> 'a \<Rightarrow> bool"
 text \<open>Quantified variables and quantified states are represented as de Bruijn indices (natural numbers).\<close>
 
 datatype 'a exp =
-  EPVar qstate var    \<comment>\<open>\<phi>^P(x): Program variable\<close>
-  | ELVar qstate var  \<comment>\<open>\<phi>^L(x): Logical variable\<close>
-  | EQVar qvar        \<comment>\<open>y: Quantified variable\<close>
+  EPVar qstate var    \<comment>\<open>\<open>\<phi>\<^sup>P(x)\<close>: Program variable\<close>
+  | ELVar qstate var  \<comment>\<open>\<open>\<phi>\<^sup>L(x)\<close>: Logical variable\<close>
+  | EQVar qvar        \<comment>\<open>\<open>y\<close>: Quantified variable\<close>
   | EConst 'a
-  | EBinop "'a exp" "'a binop" "'a exp" \<comment>\<open>e \<oplus> e\<close>
-  | EFun "'a \<Rightarrow> 'a" "'a exp"            \<comment>\<open>f(e)\<close>
+  | EBinop "'a exp" "'a binop" "'a exp" \<comment>\<open>\<open>e \<oplus> e\<close>\<close>
+  | EFun "'a \<Rightarrow> 'a" "'a exp"            \<comment>\<open>\<open>f(e)\<close>\<close>
 
 text \<open>Quantified variables and quantified states are represented as de Bruijn indices (natural numbers).
 Thus, quantifiers do not have a name for the variable or state they quantify over.\<close>
 
 datatype 'a assertion =
   AConst bool
-  | AComp "'a exp" "'a comp" "'a exp"  \<comment>\<open>e \<succeq> e\<close>
-  | AForallState "'a assertion"        \<comment>\<open>\<forall><\<phi>>. A\<close>
-  | AExistsState "'a assertion"        \<comment>\<open>\<exists><\<phi>>. A\<close>
-  | AForall "'a assertion"             \<comment>\<open>\<forall>y. A\<close>
-  | AExists "'a assertion"             \<comment>\<open>\<exists>y. A\<close>
-  | AOr "'a assertion" "'a assertion"  \<comment>\<open>A \<or> A\<close>
-  | AAnd "'a assertion" "'a assertion" \<comment>\<open>A \<and> A\<close>
+  | AComp "'a exp" "'a comp" "'a exp"  \<comment>\<open>\<open>e \<succeq> e\<close>\<close>
+  | AForallState "'a assertion"        \<comment>\<open>\<open>\<forall><\<phi>>. A\<close>\<close>
+  | AExistsState "'a assertion"        \<comment>\<open>\<open>\<exists><\<phi>>. A\<close>\<close>
+  | AForall "'a assertion"             \<comment>\<open>\<open>\<forall>y. A\<close>\<close>
+  | AExists "'a assertion"             \<comment>\<open>\<open>\<exists>y. A\<close>\<close>
+  | AOr "'a assertion" "'a assertion"  \<comment>\<open>\<open>A \<or> A\<close>\<close>
+  | AAnd "'a assertion" "'a assertion" \<comment>\<open>\<open>A \<and> A\<close>\<close>
 
 text \<open>We use a list of values and a list of states to track quantified values and states, respectively.\<close>
 
@@ -1403,7 +1403,7 @@ qed
 
 
 
-section \<open>Free variables and safe frame rule\<close>
+subsection \<open>Free variables and safe frame rule\<close>
 
 fun wr :: "(nat, nat) stmt \<Rightarrow> nat set" where
   "wr Skip = {}"

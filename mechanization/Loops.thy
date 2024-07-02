@@ -1,6 +1,8 @@
 theory Loops
   imports Logic HOL.Wellfounded Expressivity
-begin      
+begin
+
+section \<open>Rules for Loops\<close>
 
 definition lnot where
   "lnot b \<sigma> = (\<not>b \<sigma>)"

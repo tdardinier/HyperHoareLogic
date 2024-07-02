@@ -310,7 +310,7 @@ proof (rule seq_rule)
 qed
 
 
-section \<open>Other examples\<close>
+subsection \<open>Other examples\<close>
 
 lemma program_1_sat_gni:
   assumes "y \<noteq> l \<and> y \<noteq> h \<and> l \<noteq> h"

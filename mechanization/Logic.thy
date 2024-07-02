@@ -140,7 +140,7 @@ lemma under_inter:
   "entails (conj (under_approx P) (under_approx Q)) (under_approx (P \<inter> Q))"
   by (simp add: conj_def entails_def le_infI1 under_approx_def)
 
-text \<open>Definition 6: Operator \<otimes>\<close>
+text \<open>Definition 6: Operator \<open>\<otimes>\<close>\<close>
 definition join :: "'a hyperassertion \<Rightarrow> 'a hyperassertion \<Rightarrow> 'a hyperassertion" where
   "join A B S \<longleftrightarrow> (\<exists>SA SB. A SA \<and> B SB \<and> S = SA \<union> SB)"
 
@@ -175,7 +175,7 @@ proof (rule entailsI)
 qed
 
 
-text \<open>Definition 7: Operator \<Otimes> (for x \<in> X)\<close>
+text \<open>Definition 7: Operator \<open>\<Otimes>\<close> (for \<open>x \<in> X\<close>)\<close>
 definition natural_partition where
   "natural_partition I S \<longleftrightarrow> (\<exists>F. S = (\<Union>n. F n) \<and> (\<forall>n. I n (F n)))"
 
