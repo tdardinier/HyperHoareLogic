@@ -10,3 +10,4 @@ session HyperHoareLogic = HOL +
 	Compositionality
 	ExamplesCompositionality
 	TotalLogic
+	AutomatingHHL
