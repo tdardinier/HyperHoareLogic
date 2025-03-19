@@ -222,6 +222,13 @@ lemma relational_hyper_hoare_tripleI:
   using assms relational_hyper_hoare_triple_def
   by blast
 
+lemma relational_hyper_hoare_tripleE:
+  assumes "\<Turnstile> {P} [l] {Q}"
+      and "P S"
+    shows "Q (sem_lifted l S)"
+  by (meson assms(1) assms(2) relational_hyper_hoare_triple_def)
+
+
 definition split_with_b :: "(nat, 'a) bexp \<Rightarrow> nat \<Rightarrow> 'a assertion \<Rightarrow> 'a rel_hyper_assertion"
   where
   "split_with_b b k P = conj (interp_assert (split k P)) (\<lambda>S. \<forall>\<phi> \<in> S k. b (snd \<phi>) \<and> (\<forall>\<phi> \<in> S (Suc k). \<not> b (snd \<phi>)))"
@@ -294,7 +301,13 @@ lemma needed_for_soundness:
 
 
 
+(*
 
+\<turnstile> { split_with_b b 0 P } C1::C2::Cs {interp_assert (post_if_rel Q)}
+-----------------------------------------------------------------------------
+\<turnstile> { P } (if b C1 C2)::Cs {Q}
+
+*)
 theorem rule_if_relational:
   assumes "\<Turnstile> { split_with_b b 0 P } [ programs_if Cs C1 C2 ] {interp_assert (post_if_rel Q)}" (* Not Q here... *)
       and "Cs 0 = Some (if_then_else b C1 C2)"
@@ -1135,9 +1148,12 @@ qed (simp_all)
 subsubsection \<open>Transformation for havoc\<close>
 
 
+(* Only for i = 0 *)
 fun transform_havoc where
-  "transform_havoc x (AForallState i A) = AForallState i (AForall (subst_assertion_single 0 x (EQVar 0) (shift_vars 0 (transform_havoc x A))))"
-| "transform_havoc x (AExistsState i A) = AExistsState i (AExists (subst_assertion_single 0 x (EQVar 0) (shift_vars 0 (transform_havoc x A))))"
+  "transform_havoc x (AForallState 0 A) = AForallState 0 (AForall (subst_assertion_single 0 x (EQVar 0) (shift_vars 0 (transform_havoc x A))))"
+| "transform_havoc x (AExistsState 0 A) = AExistsState 0 (AExists (subst_assertion_single 0 x (EQVar 0) (shift_vars 0 (transform_havoc x A))))"
+| "transform_havoc x (AForallState (Suc n) A) = AForallState (Suc n) (transform_havoc x A)"
+| "transform_havoc x (AExistsState (Suc n) A) = AExistsState (Suc n) (transform_havoc x A)"
 | "transform_havoc x (AExists A) = AExists (transform_havoc x A)"
 | "transform_havoc x (AForall A) = AForall (transform_havoc x A)"
 | "transform_havoc x (AOr A B) = AOr (transform_havoc x A) (transform_havoc x B)"
@@ -1189,10 +1205,10 @@ qed
 (* TODO: only update 0 *)
 
 lemma equiv_havoc_transform:
-  assumes "S' = { update_state \<phi> x v |\<phi> v. \<phi> \<in> S}"
+  assumes "S' = map_zero (\<lambda>S. { update_state \<phi> x v |\<phi> v. \<phi> \<in> S}) S"
   shows "sat_assertion vals states P S' \<longleftrightarrow> sat_assertion vals states (transform_havoc x P) S"
 proof (induct P arbitrary: vals states)
-  case (AForallState P)
+  case (AForallState i P)
 
   let ?PP = "shift_vars 0 (transform_havoc x P)"
   let ?P = "subst_assertion_single 0 x (EQVar 0) ?PP"
@@ -1207,23 +1223,33 @@ sat_assertion (v # vals) (insert_at 0 (update_state \<phi> x v) states) (subst_a
     then show "sat_assertion (v # vals) (\<phi> # states) ?P S \<longleftrightarrow> sat_assertion (v # vals) (update_state \<phi> x v # states) ?P S"
       by simp
   qed
-  have "sat_assertion vals states (transform_havoc x (AForallState P)) S \<longleftrightarrow> sat_assertion vals states (AForallState (AForall ?P)) S"
+  show ?case
+  proof (cases i)
+    case 0
+
+  then have "sat_assertion vals states (transform_havoc x (AForallState i P)) S \<longleftrightarrow> sat_assertion vals states (AForallState i (AForall ?P)) S"
     by simp
-  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S. \<forall>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?P S)"
+  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S i. \<forall>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?P S)"
     using rr by simp
-  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S. \<forall>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?PP S)"
+  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S i. \<forall>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?PP S)"
     using rr subst_assertion_single_charact[of _ _ _ _ x ?PP S] helper_update_state
     by (metis interp_exp.simps(3))
-  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S. \<forall>v. sat_assertion vals (update_state \<phi> x v # states) (transform_havoc x P) S)"
+  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S i. \<forall>v. sat_assertion vals (update_state \<phi> x v # states) (transform_havoc x P) S)"
     by (metis insert_at.simps(1) le0 shift_vars_charact)
-  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S. \<forall>v. sat_assertion vals (update_state \<phi> x v # states) P S')"
+  also have "... \<longleftrightarrow> (\<forall>\<phi> \<in> S i. \<forall>v. sat_assertion vals (update_state \<phi> x v # states) P S')"
     using AForallState.hyps AForallState.prems by force
-  also have "... \<longleftrightarrow> sat_assertion vals states (AForallState P) S'"
-    using helper_S_update_states[of S' x S "\<lambda>\<phi>. sat_assertion vals (\<phi> # states) P S'"] assms by force
-  then show ?case
+  also have "... \<longleftrightarrow> sat_assertion vals states (AForallState i P) S'"
+    using helper_S_update_states[of "S' i" x "S i" "\<lambda>\<phi>. sat_assertion vals (\<phi> # states) P S'"] assms
+    by (simp add: "0")
+  then show ?thesis
     using calculation by blast
+  next
+    case (Suc k)
+    then show ?thesis
+      using AForallState assms by auto
+  qed
 next
-  case (AExistsState P)
+  case (AExistsState i P)
 
   let ?PP = "shift_vars 0 (transform_havoc x P)"
   let ?P = "subst_assertion_single 0 x (EQVar 0) ?PP"
@@ -1238,21 +1264,29 @@ sat_assertion (v # vals) (insert_at 0 (update_state \<phi> x v) states) (subst_a
     then show "sat_assertion (v # vals) (\<phi> # states) ?P S \<longleftrightarrow> sat_assertion (v # vals) (update_state \<phi> x v # states) ?P S"
       by simp
   qed
-  have "sat_assertion vals states (transform_havoc x (AExistsState P)) S \<longleftrightarrow> sat_assertion vals states (AExistsState (AExists ?P)) S"
-    by simp
-  also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S. \<exists>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?P S)"
-    using rr by simp
-  also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S. \<exists>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?PP S)"
-    by (metis helper_update_state interp_exp.simps(3) subst_assertion_single_charact)
-  also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S. \<exists>v. sat_assertion vals (update_state \<phi> x v # states) (transform_havoc x P) S)"
-    by (metis insert_at.simps(1) le0 shift_vars_charact)
-  also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S. \<exists>v. sat_assertion vals (update_state \<phi> x v # states) P S')"
-    using AExistsState.hyps AExistsState.prems by force
-  also have "... \<longleftrightarrow> sat_assertion vals states (AExistsState P) S'"
-    using helper_S_update_states_exists[of S' x S "\<lambda>\<phi>. sat_assertion vals (\<phi> # states) P S'"] assms
-    by simp
-  then show ?case
-    using calculation by blast
+  show ?case
+  proof (cases i)
+    case 0
+    then have "sat_assertion vals states (transform_havoc x (AExistsState i P)) S \<longleftrightarrow> sat_assertion vals states (AExistsState i (AExists ?P)) S"
+      by simp
+    also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S i. \<exists>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?P S)"
+      using rr by simp
+    also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S i. \<exists>v. sat_assertion (v # vals) (update_state \<phi> x v # states) ?PP S)"
+      by (metis helper_update_state interp_exp.simps(3) subst_assertion_single_charact)
+    also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S i. \<exists>v. sat_assertion vals (update_state \<phi> x v # states) (transform_havoc x P) S)"
+      by (metis insert_at.simps(1) le0 shift_vars_charact)
+    also have "... \<longleftrightarrow> (\<exists>\<phi> \<in> S i. \<exists>v. sat_assertion vals (update_state \<phi> x v # states) P S')"
+      using AExistsState.hyps AExistsState.prems by force
+    also have "... \<longleftrightarrow> sat_assertion vals states (AExistsState i P) S'"
+      using helper_S_update_states_exists[of "S' i" x "S i" "\<lambda>\<phi>. sat_assertion vals (\<phi> # states) P S'"] assms
+      using "0" by auto
+    then show ?thesis
+      using calculation by blast
+  next
+    case (Suc k)
+    then show ?thesis
+      using AExistsState assms by auto
+  qed
 qed (simp_all)
 
 
@@ -1261,22 +1295,25 @@ qed (simp_all)
 subsubsection \<open>Syntactic rule for havoc\<close>
 
 theorem rule_havoc_syntactic_general:
-  "\<Turnstile> { sat_assertion states vals (transform_havoc x P) } Havoc x {sat_assertion states vals P}"
-proof (rule hyper_hoare_tripleI)
+  "\<Turnstile> { sat_assertion states vals (transform_havoc x P) } [ [0 \<mapsto> Havoc x] ] {sat_assertion states vals P}"
+proof (rule relational_hyper_hoare_tripleI)
   fix S assume asm0: "sat_assertion states vals (transform_havoc x P) S"
-  let ?S = "sem (Havoc x) S"
+  let ?S = "map_zero (sem (Havoc x)) S"
   have "sat_assertion states vals P ?S \<longleftrightarrow> sat_assertion states vals (transform_havoc x P) S"
   proof (rule equiv_havoc_transform)
-    show "sem (Havoc x) S = {update_state \<phi> x v |\<phi> v. \<phi> \<in> S}"
+    show "map_zero (sem (Havoc x)) S = map_zero (\<lambda>S. {update_state \<phi> x v |\<phi> v. \<phi> \<in> S}) S"
+      apply (rule ext)
+      apply (case_tac xa)
+       apply simp_all
       by (simp add: sem_havoc_bis update_state_def)
   qed
-  then show "sat_assertion states vals P (sem (Havoc x) S)"
-    using asm0 by fastforce
+  then show "sat_assertion states vals P (sem_lifted [0 \<mapsto> Havoc x] S)"
+    by (simp add: asm0 sem_lifted_map_zero)
 qed
 
 
 theorem rule_havoc_syntactic:
-  "\<Turnstile> { interp_assert (transform_havoc x P) } Havoc x {interp_assert P}"
+  "\<Turnstile> { interp_assert (transform_havoc x P) } [ [0 \<mapsto> Havoc x] ] {interp_assert P}"
   by (simp add: rule_havoc_syntactic_general)
 
 
@@ -1388,9 +1425,12 @@ qed (simp_all)
 
 subsubsection \<open>Assertions\<close>
 
+(* only for 0 *)
 fun transform_assign where
-  "transform_assign x pe (AForallState A) = AForallState (subst_assertion_single 0 x (pexp_to_exp 0 pe) (transform_assign x pe A))"
-| "transform_assign x pe (AExistsState A) = AExistsState (subst_assertion_single 0 x (pexp_to_exp 0 pe) (transform_assign x pe A))"
+  "transform_assign x pe (AForallState 0 A) = AForallState 0 (subst_assertion_single 0 x (pexp_to_exp 0 pe) (transform_assign x pe A))"
+| "transform_assign x pe (AExistsState 0 A) = AExistsState 0 (subst_assertion_single 0 x (pexp_to_exp 0 pe) (transform_assign x pe A))"
+| "transform_assign x pe (AForallState (Suc n) A) = AForallState (Suc n) (transform_assign x pe A)"
+| "transform_assign x pe (AExistsState (Suc n) A) = AExistsState (Suc n) (transform_assign x pe A)"
 | "transform_assign x pe (AExists A) = AExists (transform_assign x pe A)"
 | "transform_assign x pe (AForall A) = AForall (transform_assign x pe A)"
 | "transform_assign x pe (AOr A B) = AOr (transform_assign x pe A) (transform_assign x pe B)"
@@ -1400,91 +1440,66 @@ fun transform_assign where
 
 
 lemma transform_assign_works:
-  "sat_assertion vals states (transform_assign x pe A) S = sat_assertion vals states A (subst_state x pe ` S)"
+  "sat_assertion vals states (transform_assign x pe A) S = sat_assertion vals states A (map_zero (\<lambda>S. subst_state x pe ` S) S)"
 proof (induct A arbitrary: vals states)
-  case (AForallState A)
-  have "sat_assertion vals states (transform_assign x pe (AForallState A)) S
-  \<longleftrightarrow> (\<forall>\<phi>\<in>S. sat_assertion vals (\<phi> # states) (subst_assertion_single 0 x (pexp_to_exp 0 pe) (transform_assign x pe A)) S)"
-    by auto
-  also have "... \<longleftrightarrow> (\<forall>\<phi>\<in>S. sat_assertion vals (update_state_at (\<phi> # states) 0 x (interp_exp vals (\<phi> # states) (pexp_to_exp 0 pe))) (transform_assign x pe A) S)"
-    by (simp add: subst_assertion_single_charact_better)
-  also have "... \<longleftrightarrow> (\<forall>\<phi>\<in>S. sat_assertion vals (update_state_at (\<phi> # states) 0 x (interp_exp vals (\<phi> # states) (pexp_to_exp 0 pe))) A (subst_state x pe ` S))"
-    using AForallState by presburger
-  also have "... \<longleftrightarrow> (\<forall>\<phi>\<in>S. sat_assertion vals (update_state \<phi> x (interp_exp vals (\<phi> # states) (pexp_to_exp 0 pe)) # states) A (subst_state x pe ` S))"
-    using update_state_at_def
-    by (metis list_update_code(2) nth_Cons_0)
-  also have "... \<longleftrightarrow> (\<forall>\<phi>\<in>S. sat_assertion vals (update_state \<phi> x (interp_pexp pe (snd \<phi>)) # states) A (subst_state x pe ` S))"
-    by (metis nth_Cons_0 same_syn_sem_exp)
-  finally show "sat_assertion vals states (transform_assign x pe (AForallState A)) S = sat_assertion vals states (AForallState A) (subst_state x pe ` S)"
-    by (simp add: subst_state_def update_state_def)
+  case (AForallState i A)
+  then show ?case
+    apply (cases i)
+     apply simp_all
+    using subst_assertion_single_charact_better AForallState update_state_at_def
+    list_update_code(2) nth_Cons_0 same_syn_sem_exp subst_state_def update_state_def
+    by (metis length_greater_0_conv list.simps(3))
 next
-  case (AExistsState A)
-  have "sat_assertion vals states (transform_assign x pe (AExistsState A)) S
-  \<longleftrightarrow> (\<exists>\<phi>\<in>S. sat_assertion vals (\<phi> # states) (subst_assertion_single 0 x (pexp_to_exp 0 pe) (transform_assign x pe A)) S)"
-    by auto
-  also have "... \<longleftrightarrow> (\<exists>\<phi>\<in>S. sat_assertion vals (update_state_at (\<phi> # states) 0 x (interp_exp vals (\<phi> # states) (pexp_to_exp 0 pe))) (transform_assign x pe A) S)"
-    by (simp add: subst_assertion_single_charact_better)
-  also have "... \<longleftrightarrow> (\<exists>\<phi>\<in>S. sat_assertion vals (update_state_at (\<phi> # states) 0 x (interp_exp vals (\<phi> # states) (pexp_to_exp 0 pe))) A (subst_state x pe ` S))"
-    using AExistsState by presburger
-  also have "... \<longleftrightarrow> (\<exists>\<phi>\<in>S. sat_assertion vals (update_state \<phi> x (interp_exp vals (\<phi> # states) (pexp_to_exp 0 pe)) # states) A (subst_state x pe ` S))"
-    using update_state_at_def
-    by (metis list_update_code(2) nth_Cons_0)
-  also have "... \<longleftrightarrow> (\<exists>\<phi>\<in>S. sat_assertion vals (update_state \<phi> x (interp_pexp pe (snd \<phi>)) # states) A (subst_state x pe ` S))"
-    by (metis nth_Cons_0 same_syn_sem_exp)
-  finally show "sat_assertion vals states (transform_assign x pe (AExistsState A)) S = sat_assertion vals states (AExistsState A) (subst_state x pe ` S)"
-    by (simp add: subst_state_def update_state_def)
+  case (AExistsState i A)
+  then show ?case
+    apply (cases i)
+     apply simp_all
+    using subst_assertion_single_charact_better AExistsState update_state_at_def
+    list_update_code(2) nth_Cons_0 same_syn_sem_exp subst_state_def update_state_def
+    by (metis length_greater_0_conv list.simps(3))
 qed (simp_all)
 
 
 subsubsection \<open>Syntactic rule for assignments\<close>
 
-theorem rule_assign_syntactic_general:
-  "\<Turnstile> { sat_assertion vals states (transform_assign x pe P) } Assign x (interp_pexp pe) {sat_assertion vals states P}"
-proof (rule hyper_hoare_tripleI)
-  fix S assume asm0: "sat_assertion vals states (transform_assign x pe P) S"
-  then have "sat_assertion vals states P (subst_state x pe ` S)"
-    using transform_assign_works by blast
-  moreover have "{(l, \<sigma>(x := interp_pexp pe \<sigma>)) |l \<sigma>. (l, \<sigma>) \<in> S} = subst_state x pe ` S" (is "?A = ?B")
+lemma subst_state_equiv_def:
+  "{(l, \<sigma>(x := interp_pexp pe \<sigma>)) |l \<sigma>. (l, \<sigma>) \<in> S} = subst_state x pe ` S" (is "?A = ?B")
+proof
+  show "?A \<subseteq> ?B"
   proof
-    show "?A \<subseteq> ?B"
-    proof
-      fix \<phi> assume "\<phi> \<in> ?A"
-      then obtain l \<sigma> where "\<phi> = (l, \<sigma>(x := interp_pexp pe \<sigma>))" "(l, \<sigma>) \<in> S"
-        by blast
-      then show "\<phi> \<in> ?B"
-        by (metis (mono_tags, lifting) fst_conv image_iff snd_conv subst_state_def)
-    qed
-    show "?B \<subseteq> ?A"
-      using subst_state_def by fastforce
+    fix \<phi> assume "\<phi> \<in> ?A"
+    then obtain l \<sigma> where "\<phi> = (l, \<sigma>(x := interp_pexp pe \<sigma>))" "(l, \<sigma>) \<in> S"
+      by blast
+    then show "\<phi> \<in> ?B"
+      by (metis (mono_tags, lifting) fst_conv image_iff snd_conv subst_state_def)
   qed
-  ultimately show "sat_assertion vals states P (sem (Assign x (interp_pexp pe)) S)"
-    by (simp add: sem_assign)
+  show "?B \<subseteq> ?A"
+    using subst_state_def by fastforce
+qed
+
+
+theorem rule_assign_syntactic_general:
+  "\<Turnstile> { sat_assertion vals states (transform_assign x pe P) } [ [0 \<mapsto> Assign x (interp_pexp pe)] ] {sat_assertion vals states P}"
+  apply (rule relational_hyper_hoare_tripleI)
+  using transform_assign_works[of vals states x pe P] subst_state_equiv_def[of x pe]
+proof -
+  fix S :: "nat \<Rightarrow> ((nat \<Rightarrow> 'a) \<times> (nat \<Rightarrow> 'a)) set"
+  assume "sat_assertion vals states (transform_assign x pe P) S"
+  then have f1: "sat_assertion vals states P (map_zero ((`) (subst_state x pe)) S)"
+    using \<open>\<And>S. sat_assertion vals states (transform_assign x pe P) S = sat_assertion vals states P (map_zero ((`) (subst_state x pe)) S)\<close> by blast
+  have "\<forall>r. sem (Assign x (interp_pexp pe)) (r::((nat \<Rightarrow> 'a) \<times> (nat \<Rightarrow> 'a)) set) = subst_state x pe ` r"
+    by (simp add: \<open>\<And>S. {(l, \<sigma>(x := interp_pexp pe \<sigma>)) |l \<sigma>. (l, \<sigma>) \<in> S} = subst_state x pe ` S\<close> sem_assign)
+  then have "sat_assertion vals states P (map_zero (sem (Assign x (interp_pexp pe))) S)"
+    using f1 by presburger
+  then show "sat_assertion vals states P (sem_lifted [0 \<mapsto> Assign x (interp_pexp pe)] S)"
+    by (simp add: sem_lifted_map_zero)
 qed
 
 
 
 theorem rule_assign_syntactic:
-  "\<Turnstile> { interp_assert (transform_assign x pe P) } Assign x (interp_pexp pe) {interp_assert P}"
-proof (rule hyper_hoare_tripleI)
-  fix S assume asm0: "interp_assert (transform_assign x pe P) S"
-  then have "sat_assertion [] [] P (subst_state x pe ` S)"
-    using transform_assign_works by blast
-  moreover have "{(l, \<sigma>(x := interp_pexp pe \<sigma>)) |l \<sigma>. (l, \<sigma>) \<in> S} = subst_state x pe ` S" (is "?A = ?B")
-  proof
-    show "?A \<subseteq> ?B"
-    proof
-      fix \<phi> assume "\<phi> \<in> ?A"
-      then obtain l \<sigma> where "\<phi> = (l, \<sigma>(x := interp_pexp pe \<sigma>))" "(l, \<sigma>) \<in> S"
-        by blast
-      then show "\<phi> \<in> ?B"
-        by (metis (mono_tags, lifting) fst_conv image_iff snd_conv subst_state_def)
-    qed
-    show "?B \<subseteq> ?A"
-      using subst_state_def by fastforce
-  qed
-  ultimately show "interp_assert P (sem (Assign x (interp_pexp pe)) S)"
-    by (simp add: sem_assign)
-qed
+  "\<Turnstile> { interp_assert (transform_assign x pe P) } [ [0 \<mapsto> Assign x (interp_pexp pe)] ] {interp_assert P}"
+  by (simp add: rule_assign_syntactic_general)
 
 
 
@@ -1493,28 +1508,299 @@ qed
 subsection \<open>Loop rules\<close>
 
 
-fun no_exists_state :: "'a assertion \<Rightarrow> bool"
+fun no_exists_state :: "nat set \<Rightarrow> 'a assertion \<Rightarrow> bool"
   where
-  "no_exists_state (AConst _) \<longleftrightarrow> True"
-| "no_exists_state (AComp _ _ _) \<longleftrightarrow> True"
-| "no_exists_state (AForallState A) \<longleftrightarrow> no_exists_state A"
-| "no_exists_state (AExistsState A) \<longleftrightarrow> False"
-| "no_exists_state (AForall A) \<longleftrightarrow> no_exists_state A"
-| "no_exists_state (AExists A) \<longleftrightarrow> no_exists_state A"
-| "no_exists_state (AAnd A B) \<longleftrightarrow> no_exists_state A \<and> no_exists_state B"
-| "no_exists_state (AOr A B) \<longleftrightarrow> no_exists_state A \<and> no_exists_state B"
+  "no_exists_state I (AConst _) \<longleftrightarrow> True"
+| "no_exists_state I (AComp _ _ _) \<longleftrightarrow> True"
+| "no_exists_state I (AForallState _ A) \<longleftrightarrow> no_exists_state I A"
+| "no_exists_state I (AExistsState i A) \<longleftrightarrow> i \<notin> I \<and> no_exists_state I A"
+| "no_exists_state I (AForall A) \<longleftrightarrow> no_exists_state I A"
+| "no_exists_state I (AExists A) \<longleftrightarrow> no_exists_state I A"
+| "no_exists_state I (AAnd A B) \<longleftrightarrow> no_exists_state I A \<and> no_exists_state I B"
+| "no_exists_state I (AOr A B) \<longleftrightarrow> no_exists_state I A \<and> no_exists_state I B"
+
+definition hyper_set_le where
+  "hyper_set_le I S S' \<longleftrightarrow> (\<forall>i\<in>I. S i \<subseteq> S' i) \<and> (\<forall>i. i \<notin> I \<longrightarrow> S i = S' i)"
+
+lemma hyper_set_leI:
+  assumes "\<And>i. i \<in> I \<Longrightarrow> S i \<subseteq> S' i"
+      and "\<And>i. i \<notin> I \<Longrightarrow> S i = S' i"
+    shows "hyper_set_le I S S'"
+  by (simp add: assms(1) assms(2) hyper_set_le_def)
 
 lemma mono_sym_then_up_closed:
-  assumes "no_exists_state A"
-      and "S \<subseteq> S'"
+  assumes "no_exists_state I A"
+      and "hyper_set_le I S S'"
       and "sat_assertion vals states A S'"
     shows "sat_assertion vals states A S"
   using assms
 proof (induct A arbitrary: vals states)
-  case (AExistsState A)
+  case (AForallState i A)
+  then have "S i \<subseteq> S' i"
+    by (metis Orderings.order_eq_iff hyper_set_le_def)
   then show ?case
-    by (metis no_exists_state.simps(4))
+    using AForallState.hyps AForallState.prems(1) AForallState.prems(3) assms(2) by auto
+next
+  case (AExistsState i A)
+  then show ?case
+  proof (simp)
+    obtain \<phi> where "\<phi>\<in>S i" "sat_assertion vals (\<phi> # states) A S'"
+      using AExistsState(3) unfolding hyper_set_le_def
+      using AExistsState.prems(1) AExistsState.prems(3) by auto
+    then have "sat_assertion vals (\<phi> # states) A S"
+      using AExistsState(1)[OF _ AExistsState(3), of vals "\<phi> # states"]
+      using AExistsState.prems(1) by fastforce
+    then show "\<exists>\<phi>\<in>S i. sat_assertion vals (\<phi> # states) A S"
+      using \<open>\<phi> \<in> S i\<close> by blast
+  qed
 qed (auto)
+
+
+
+
+
+
+
+
+
+
+section \<open>General while loop\<close>
+
+
+
+
+(* Set becomes larger for  *)
+definition hyper_ascending :: "nat set \<Rightarrow> (nat \<Rightarrow> 'a hyper_set) \<Rightarrow> bool" where
+  "hyper_ascending I S \<longleftrightarrow> (\<forall>n m. n \<le> m \<longrightarrow> hyper_set_le I (S n) (S m))"
+
+lemma hyper_ascendingI_direct:
+  assumes "\<And>n m. n \<le> m \<Longrightarrow> hyper_set_le I (S n) (S m)"
+  shows "hyper_ascending I S"
+  by (simp add: hyper_ascending_def assms)
+
+lemma hyper_set_le_trans:
+  assumes "hyper_set_le I A B"
+      and "hyper_set_le I B C"
+    shows "hyper_set_le I A C"
+  using assms unfolding hyper_set_le_def
+  by blast
+
+lemma hyper_set_le_refl:
+  "hyper_set_le I A A"
+  unfolding hyper_set_le_def by blast
+
+lemma hyper_ascendingI:
+  assumes "\<And>n. hyper_set_le I (S n) (S (Suc n))"
+  shows "hyper_ascending I S"
+proof (rule hyper_ascendingI_direct)
+  fix n m :: nat assume asm0: "n \<le> m"
+  moreover have "n \<le> m \<Longrightarrow> hyper_set_le I (S n) (S m)"
+  proof (induct "m - n" arbitrary: m n)
+    case (Suc x)
+    then show ?case
+      by (metis (no_types, opaque_lifting) add_Suc_right assms diff_add_inverse diff_add_inverse2 diff_le_self hyper_set_le_trans ordered_cancel_comm_monoid_diff_class.add_diff_inverse)
+  qed (simp add: hyper_set_le_refl)
+  ultimately show "hyper_set_le I (S n) (S m)" 
+    by blast
+qed
+
+definition hyper_union where
+  "hyper_union S i = (\<Union>n. S i n)"
+
+
+definition relational_upwards_closed where
+  "relational_upwards_closed I P P_inf \<longleftrightarrow> (\<forall>S. hyper_ascending I S \<and> (\<forall>n. P n (S n)) \<longrightarrow> P_inf (hyper_union S))"
+
+lemma relational_upwards_closedI:
+  assumes "\<And>S. hyper_ascending I S \<Longrightarrow> (\<forall>n. P n (S n)) \<Longrightarrow> P_inf (hyper_union S)"
+  shows "relational_upwards_closed I P P_inf"
+  by (simp add: assms relational_upwards_closed_def)
+
+lemma upwards_closedE:
+  assumes "relational_upwards_closed I P P_inf"
+      and "hyper_ascending I S"
+      and "\<And>n. P n (S n)"
+    shows "P_inf (hyper_union S)"
+  using assms(1) assms(2) assms(3) relational_upwards_closed_def by blast
+
+
+definition construct_programs where
+  "construct_programs I f i = (if i \<in> I then Some (f i) else None)"
+
+
+definition holds_forall_relational where
+  "holds_forall_relational I b S \<longleftrightarrow> (\<forall>i \<in> I. \<forall>\<phi>\<in>S i. b (snd \<phi>))"
+
+
+fun iterate_sem_lifted where
+  "iterate_sem_lifted 0 _ S = S"
+| "iterate_sem_lifted (Suc n) Cs S = sem_lifted Cs (iterate_sem_lifted n Cs S)"
+
+lemma relational_indexed_invariant_then_power:
+  assumes "\<And>n. relational_hyper_hoare_triple (I n) Cs (I (Suc n))"
+      and "I 0 S"
+  shows "I n (iterate_sem_lifted n Cs S)"
+  using assms
+proof (induct n arbitrary: S)
+next
+  case (Suc n)
+  then have "I n (iterate_sem_lifted n Cs S)"
+    by blast
+  then have "I (Suc n) (sem_lifted Cs (iterate_sem_lifted n Cs S))"
+    using Suc.prems(1) relational_hyper_hoare_tripleE by blast
+  then show ?case
+    by (simp add: Suc.hyps Suc.prems(1))
+qed (auto)
+
+definition union_hyper_sets where
+  "union_hyper_sets A B i = A i \<union> B i"
+
+fun relational_union_up_to_n where
+  "relational_union_up_to_n C S 0 = iterate_sem_lifted 0 C S"
+| "relational_union_up_to_n C S (Suc n) = union_hyper_sets (iterate_sem_lifted (Suc n) C S) (relational_union_up_to_n C S n)"
+
+definition map_indices where
+  "map_indices I f S i = (if i \<in> I then f i (S i) else S i)"
+
+definition filter_exp_indices where
+  "filter_exp_indices I b S = map_indices I (\<lambda>i. filter_exp (lnot (b i))) S"
+
+lemma relational_iterate_sem_assume_increasing:
+  assumes "Cs = construct_programs I (\<lambda>i. if_then (b i) (C i))"
+  shows "hyper_set_le I (filter_exp_indices I b (iterate_sem_lifted n Cs S)) (filter_exp_indices I b (iterate_sem_lifted (Suc n) Cs S))"
+  apply (rule hyper_set_leI)
+  using assms unfolding hyper_set_le_def filter_exp_indices_def construct_programs_def map_indices_def
+   apply simp_all
+   apply (smt (verit) UnCI filter_exp_def if_then_sem member_filter option.sel partial_sem.elims sem_lifted_def subsetI)
+  by (simp add: sem_lifted_def)
+
+
+lemma relational_filter_exp_union:
+  "filter_exp_indices I b (union_hyper_sets S1 S2) = union_hyper_sets (filter_exp_indices I b S1) (filter_exp_indices I b S2)" (is "?A = ?B")
+  unfolding filter_exp_indices_def union_hyper_sets_def
+  apply (rule ext)
+  apply rule
+  by (simp_all add: filter_exp_union map_indices_def)
+
+
+
+(*
+lemma filter_exp_union:
+  "filter_exp b (S1 \<union> S2) = filter_exp b S1 \<union> filter_exp b S2" (is "?A = ?B")
+proof
+  show "?A \<subseteq> ?B"
+  proof
+    fix x assume "x \<in> ?A"
+    then show "x \<in> ?B"
+    proof (cases "x \<in> S1")
+      case True
+      then show ?thesis
+        by (metis UnI1 \<open>x \<in> filter_exp b (S1 \<union> S2)\<close> filter_exp_def member_filter)
+    next
+      case False
+      then show ?thesis
+        by (metis Un_iff \<open>x \<in> filter_exp b (S1 \<union> S2)\<close> filter_exp_def member_filter)
+    qed
+  qed
+  show "?B \<subseteq> ?A"
+    by (simp add: filter_exp_def subset_iff)
+qed
+*)
+(*
+lemma iterate_sem_assume_increasing_union_up_to:
+  "filter_exp (lnot b) (iterate_sem n (if_then b C) S) = filter_exp (lnot b) (union_up_to_n (if_then b C) S n)"
+proof (induct n)
+  case (Suc n)
+  then show ?case
+    by (metis filter_exp_union iterate_sem_assume_increasing sup.orderE union_up_to_n.simps(2))
+qed (simp)
+
+*)
+
+thm sup.orderE
+
+
+lemma relational_iterate_sem_assume_increasing_union_up_to:
+  assumes "Cs = construct_programs I (\<lambda>i. if_then (b i) (C i))"
+  shows "filter_exp_indices I b (iterate_sem_lifted n Cs S) = filter_exp_indices I b (relational_union_up_to_n Cs S n)"
+proof (induct n)
+  case (Suc n)
+  then show ?case
+
+    using relational_filter_exp_union[of I b] relational_iterate_sem_assume_increasing[OF assms(1)]
+    sorry
+
+    apply (rule ext)
+    
+
+    apply (case_tac "x \<in> I")
+     apply simp_all
+    sorry
+
+    by (metis filter_exp_union iterate_sem_assume_increasing sup.orderE union_up_to_n.simps(2))
+qed (simp)
+
+
+theorem relational_while_general_simple:
+  assumes "\<And>n. \<Turnstile> {P n} [ construct_programs I (\<lambda>i. if_then (b i) (C i)) ] { P (Suc n) }"
+      and "\<And>n. \<Turnstile> {P n} [ construct_programs I (\<lambda>i. Assume (lnot (b i))) ] {Q n}"
+      and "relational_upwards_closed I Q Q_inf"
+
+  shows "\<Turnstile> {P 0} [ construct_programs I (\<lambda>i. while_cond (b i) (C i)) ] {conj Q_inf (\<lambda>S. \<forall>i \<in> I. \<forall>\<phi> \<in> S i. \<not> b i (snd \<phi>)) }"
+proof (rule relational_hyper_hoare_tripleI)
+  fix S assume asm0: "P 0 S"
+
+  then have "\<And>n. P n (iterate_sem_lifted n (construct_programs I (\<lambda>i. if_then (b i) (C i))) S)"
+    using assms(1) relational_indexed_invariant_then_power by blast
+
+  thm assume_sem filter_exp_def hyper_hoare_triple_def iterate_sem_assume_increasing_union_up_to
+
+
+  then have "\<And>n. Q n (filter_exp (lnot b) (union_up_to_n (if_then b C) S n))"
+    by (metis assms(2) assume_sem filter_exp_def hyper_hoare_triple_def iterate_sem_assume_increasing_union_up_to)
+  moreover have "ascending (\<lambda>n. filter_exp (lnot b) (union_up_to_n (if_then b C) S n))"
+    by (simp add: ascending_iterate_filter)
+  ultimately have "Q_inf (sem (while_cond b C) S)"
+    by (metis (no_types, lifting) SUP_cong assms(3) filter_exp_union_general iterate_sem_assume_increasing_union_up_to sem_while_with_if upwards_closed_def)
+  
+  
+
+  show "Logic.conj Q_inf (\<lambda>S. \<forall>i\<in>I. \<forall>\<phi>\<in>S i. \<not> b i (snd \<phi>)) (sem_lifted (construct_programs I (\<lambda>i. while_cond (b i) (C i))) S)"
+    sorry
+
+  then show "Logic.conj Q_inf (holds_forall (lnot b)) (sem (while_cond b C) S)"
+    by (simp add: conj_def filter_exp_def holds_forall_def sem_while_with_if)
+qed
+
+
+(* TODO: Think about this: *)
+
+lemma ascending_iterate_filter:
+  "ascending (\<lambda>n. filter_exp (lnot b) (union_up_to_n (if_then b C) S n))"
+  by (metis ascendingI iterate_sem_assume_increasing iterate_sem_assume_increasing_union_up_to)
+
+
+
+
+theorem generalized_relational_while_rule:
+  assumes ""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 definition up_closed where
   "up_closed A \<longleftrightarrow> (\<forall>S S' vals states. S \<subseteq> S' \<and> sat_assertion vals states A S \<longrightarrow> sat_assertion vals states A S')"

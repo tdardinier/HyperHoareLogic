@@ -904,4 +904,93 @@ next
     by (meson assign_exp_to_lvar_set_same_mod_updates low_exp_forall_same_mod_updates)
 qed
 
+
+
+
+
+
+
+definition hyper_independent_vars where
+  "hyper_independent_vars vars F \<longleftrightarrow> (\<forall>S S'. S \<in> F \<and> same_mod_updates vars S S' \<longrightarrow> S' \<in> F)"
+
+lemma hyper_independent_varsI:
+  assumes "\<And>S S'. S \<in> F \<Longrightarrow> same_mod_updates vars S S' \<Longrightarrow> S' \<in> F"
+  shows "hyper_independent_vars vars F"
+  using assms hyper_independent_vars_def by blast
+
+lemma subset_mod_updates_union:
+  assumes "subset_mod_updates vars A A'"
+      and "subset_mod_updates vars B B'"
+    shows "subset_mod_updates vars (A \<union> B) (A' \<union> B')"
+  apply (rule subset_mod_updatesI)
+  apply simp
+  apply (elim disjE)
+  apply (meson Un_iff assms(1) subset_mod_updatesE)
+  by (meson Un_iff assms(2) subset_mod_updatesE)
+
+lemma same_mod_updates_union:
+  assumes "same_mod_updates vars A A'"
+      and "same_mod_updates vars B B'"
+    shows "same_mod_updates vars (A \<union> B) (A' \<union> B')"
+  using assms subset_mod_updates_union unfolding same_mod_updates_def by blast
+
+lemma subset_mod_updates_union_duplicate:
+  assumes "subset_mod_updates vars S S'"
+    shows "subset_mod_updates vars S (S \<union> S')"
+  apply (rule subset_mod_updatesI)
+  using equal_outside_set_def by auto
+
+
+lemma same_mod_updates_union_duplicate:
+  assumes "same_mod_updates vars S S'"
+    shows "same_mod_updates vars S (S \<union> S')"
+  using assms subset_mod_updates_union_duplicate unfolding same_mod_updates_def
+  by (metis subset_mod_updates_trans subset_mod_updates_union sup.idem)
+
+
+lemma lift_fv_mod_condition_powerset_to_downwards_closed:
+  assumes "hyper_independent_vars vars F"
+      and downwards_closed: "\<And>S S'. S' \<in> F \<Longrightarrow> S \<subseteq> S' \<Longrightarrow> S \<in> F"
+    shows "\<exists>maxis. F = (\<Union>f\<in>maxis. {S. S\<subseteq>f}) \<and> (\<forall>f \<in> maxis. hyper_independent_vars vars {S. S\<subseteq>f})"
+proof -
+  let ?is_max = "\<lambda>S. S \<in> F \<and> (\<forall>S'. S \<subseteq> S' \<and> S' \<in> F \<longrightarrow> S = S')"
+  define maxis where "maxis = { S. ?is_max S}"
+
+  have r0: "F = (\<Union>f\<in>maxis. {S. S\<subseteq>f})"
+    sorry
+
+  moreover have "\<And>f. f \<in> maxis \<Longrightarrow> hyper_independent_vars vars {S. S\<subseteq>f}"
+  proof -
+    fix f assume "f \<in> maxis"
+    then obtain asm0: "f \<in> F" "\<And>S'. f \<subseteq> S' \<Longrightarrow> S' \<in> F \<Longrightarrow> f = S'"
+      unfolding maxis_def by blast
+    then have r1: "{S. S\<subseteq>f} \<subseteq> F"
+      using r0 by blast
+    show "hyper_independent_vars vars {S. S\<subseteq>f}"
+    proof (rule hyper_independent_varsI)
+      fix S S'
+      assume asm1: "S \<in> {S. S \<subseteq> f}" "same_mod_updates vars S S'"
+      then have "S \<in> F"
+        using r1 by fast
+      then have "same_mod_updates vars (S \<union> f) (S \<union> S' \<union> f)"
+        by (simp add: asm1(2) same_mod_updates_refl same_mod_updates_union same_mod_updates_union_duplicate)
+      moreover have r2: "S \<union> f = f" using asm1 by blast
+      moreover have "f = f \<union> S'"
+      proof (rule asm0(2))
+        show "f \<union> S' \<in> F"
+          using assms(1) unfolding hyper_independent_vars_def using r2 asm1(2)
+          by (metis asm0(1) calculation(1) sup_assoc sup_commute)
+      qed (simp)
+      then show "S' \<in> {S. S \<subseteq> f}"
+        by blast
+    qed
+  qed
+  ultimately show ?thesis
+    by blast
+qed
+
+
+
+
+
 end

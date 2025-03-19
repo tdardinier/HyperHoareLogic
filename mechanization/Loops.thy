@@ -571,6 +571,8 @@ proof (rule hyper_hoare_tripleI)
     by (simp add: conj_def filter_exp_def holds_forall_def sem_while_with_if)
 qed
 
+
+
 definition while_loop_assertion_n where
   "while_loop_assertion_n C S0 n S \<longleftrightarrow> (S = union_up_to_n C S0 n)"
 
