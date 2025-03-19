@@ -2,11 +2,6 @@ theory SyntacticAutomation
   imports SyntacticAssertions
 begin
 
-(*
-type_synonym 'a nstate = "(var, 'a, var, 'a) state"
-type_synonym 'a npstate = "(var, 'a) pstate"
-*)
-
 type_synonym 'a substitution = "var \<Rightarrow> 'a pexp"
 type_synonym 'a path_condition = "'a pbexp"
 
@@ -14,9 +9,6 @@ type_synonym 'a characterizer = "('a path_condition \<times> 'a substitution) li
 
 definition apply_substitution :: "'a substitution \<Rightarrow> 'a npstate \<Rightarrow> 'a npstate" where
   "apply_substitution subst \<sigma> x = interp_pexp (subst x) \<sigma>"
-(* example:
-subst: (x \<mapsto> y + z, ...)
-*)
 
 definition correct_characterizer :: "'a characterizer \<Rightarrow> (var, 'a) stmt \<Rightarrow> bool" where
   "correct_characterizer L C \<longleftrightarrow> (\<forall>\<sigma> \<sigma>'. (\<langle>C, \<sigma>\<rangle> \<rightarrow> \<sigma>') \<longleftrightarrow> (\<exists>(pc, subst) \<in> set L. interp_pbexp pc \<sigma> \<and> \<sigma>' = apply_substitution subst \<sigma>))"
@@ -41,25 +33,6 @@ lemma correct_characterizer_sem_charact:
   by blast
 
 
-(*
-fun pexp_to_exp where
-  "pexp_to_exp st (PVar x) = EPVar st x"
-| "pexp_to_exp _ (PConst n) = EConst n"
-| "pexp_to_exp st (PBinop p1 op p2) = EBinop (pexp_to_exp st p1) op (pexp_to_exp st p2)"
-| "pexp_to_exp st (PFun f p) = EFun f (pexp_to_exp st p)"
-
-*)
-
-(* TODO:
-- Define transformation
-- Show that with a correct list, we obtain a weakest precondition!
-At least a sufficient condition...
-*)
-
-(*
-Mapping from variable and...
-*)
-
 definition identity_substitution :: "'a substitution" where
   "identity_substitution x = PVar x"
 
@@ -69,10 +42,6 @@ lemma identity_substitution_is_identity:
   by simp
 
 
-(*
-for \<sigma> (0) we use this substitution,
-for \<sigma>' (1) we use this potentially different one...
-*)
 fun transform_exp :: "(nat \<Rightarrow> 'a substitution) \<Rightarrow> 'a exp \<Rightarrow> 'a exp" where
   "transform_exp m (EPVar st y) = pexp_to_exp st (m st y)"
 | "transform_exp m (EBinop e1 bop e2) = EBinop (transform_exp m e1) bop (transform_exp m e2)"
@@ -115,13 +84,6 @@ qed (auto)
 
 
 
-(* we start with
-\<lambda>st x. EPVar st x
-*)
-
-(*
-all pcs should exclude each other?
-*)
 fun shift_map_and_update :: "(nat \<Rightarrow> 'a substitution) \<Rightarrow> 'a substitution \<Rightarrow> nat \<Rightarrow> 'a substitution" where
   "shift_map_and_update _ subst 0 = subst"
 | "shift_map_and_update m _ (Suc n) = m n"
@@ -150,25 +112,6 @@ fun transform_post_based_on_list :: "(nat \<Rightarrow> 'a substitution) \<Right
 | "transform_post_based_on_list m L (AComp e1 cmp e2) = AComp (transform_exp m e1) cmp (transform_exp m e2)"
 
 
-
-(* induction over what? *)
-
-(*
-Or
-*)
-
-
-
-(*
-Something about m is missing...
-Probably we should apply it to states in assumption or goal
-*)
-
-(*
-sat_assertion vals ((l, \<sigma>) # states) (foldr
-  (\<lambda>(pc, subst) B. AAnd B (AImp (pbexp_to_assertion 0 pc) (transform_post_based_on_list (shift_map_and_update m subst) L P)))
-  L (AConst True)) S"
-*)
 lemma sat_assertion_foldr_and:
   assumes "sat_assertion vals states (foldr (\<lambda>x B. AAnd B (f x)) l (AConst True)) S"
       and "x \<in> set l"
@@ -279,25 +222,6 @@ qed
 
 section \<open>Compositionally computing this characterizer\<close>
 
-(*
-'a path_condition \<times> 'a substitution
-*)
-
-(*
-definition compose_pcs :: "'a path_condition \<Rightarrow> 'a path_condition \<Rightarrow> 'a path_condition" where
-  "compose_pcs b1 b2 = PBAnd b1 b2"
-*)
-
-(*
-type_synonym 'a substitution = "var \<Rightarrow> 'a pexp"
-*)
-(*
-fun subst_pexp :: "var \<Rightarrow> 'a pexp \<Rightarrow> 'a pexp \<Rightarrow> 'a pexp" where
-  "subst_pexp x e (PVar y) = (if x = y then e else PVar y)"
-| "subst_pexp x e (PBinop p1 op p2) = PBinop (subst_pexp x e p1) op (subst_pexp x e p2)"
-| "subst_pexp x e (PFun f p) = PFun f (subst_pexp x e p)"
-| "subst_pexp _ _ e = e" (* Constants and quantified vars *)
-*)
 
 fun apply_substitution_pexp :: "'a substitution \<Rightarrow> 'a pexp \<Rightarrow> 'a pexp" where
   "apply_substitution_pexp subst (PVar x) = subst x"
